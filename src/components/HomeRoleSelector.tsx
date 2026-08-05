@@ -33,15 +33,15 @@ export const HomeRoleSelector: React.FC = () => {
         </h1>
       </div>
 
-      {/* Grid of 5 Role Access Buttons - Minimalist: Icon + Name ONLY */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full max-w-5xl">
+      {/* Grid of 5 Role Access Buttons - 2 Columns Layout */}
+      <div className="grid grid-cols-2 gap-4 w-full max-w-xl">
         {ROLES.map((role) => {
           const IconComponent = iconMap[role.icon] || Wrench;
           return (
             <button
               key={role.id}
               onClick={() => setCurrentRole(role.id as RoleType)}
-              className="group relative flex flex-col items-center justify-center p-6 bg-[#0c0c0c] border border-white/10 rounded-lg hover:border-amber-500 hover:bg-[#141414] transition-all duration-200 cursor-pointer"
+              className="group relative flex flex-col items-center justify-center p-6 bg-[#0c0c0c] border border-white/10 rounded-lg hover:border-amber-500 hover:bg-[#141414] transition-all duration-200 cursor-pointer last:col-span-2"
             >
               <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-black transition-colors mb-4">
                 <IconComponent className="w-6 h-6" />
