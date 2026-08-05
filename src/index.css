@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg: #050505;
+    --surface: #0c0c0c;
+    --surface-hover: #141414;
+    --accent: #f59e0b;
+    --border: rgba(255, 255, 255, 0.08);
+  }
+  
+  body {
+    background-color: var(--bg);
+    color: #94a3b8;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #080808;
+}
+::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #404040;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.card-flat {
+  border-left: 3px solid #f59e0b;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem;
+}
+
+.status-pill {
+  font-size: 11px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
