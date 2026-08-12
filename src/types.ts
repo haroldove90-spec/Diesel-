@@ -69,6 +69,65 @@ export interface OSEvidence {
   partType: 'dañada' | 'nueva';
 }
 
+export interface WorkOrderDiagnosisItem {
+  id: string;
+  no: number;
+  reportedFault: string;
+  initialDiagnosis: string;
+  estimatedHours: number;
+}
+
+export interface WorkOrderActivityLog {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  effectiveTime: string;
+  taskDescription: string;
+  initials: string;
+}
+
+export interface WorkOrderPartItem {
+  id: string;
+  code: string;
+  description: string;
+  quantity: number;
+}
+
+export interface WorkOrderChecklistItem {
+  id: string;
+  systemName: string;
+  status: 'ok' | 'attention' | 'na';
+  comments: string;
+}
+
+export interface WorkOrderData {
+  id: string;
+  osNumber: string;
+  entryDate: string;
+  estimatedDeliveryDate: string;
+  maintenanceType: 'Correctivo' | 'Preventivo' | 'Garantía';
+  unitNumber: string;
+  brandAndModel: string;
+  year: string;
+  vin: string;
+  plates: string;
+  currentMileage: string;
+  horometer: string;
+  responsibleMechanic: string;
+  supervisorInCharge: string;
+  diagnoses: WorkOrderDiagnosisItem[];
+  activityLogs: WorkOrderActivityLog[];
+  partsUsed: WorkOrderPartItem[];
+  finalChecklist: WorkOrderChecklistItem[];
+  roadTestsDone: string;
+  technicalRecommendations: string;
+  mechanicSigned: boolean;
+  supervisorSigned: boolean;
+  mechanicSignatureDate?: string;
+  supervisorSignatureDate?: string;
+}
+
 export interface ServiceOrder {
   id: string; // e.g., "OS-9283"
   trackingToken: string;
@@ -90,6 +149,7 @@ export interface ServiceOrder {
   warrantyDetails?: string;
   techNotes?: string;
   notes?: string;
+  workOrderData?: WorkOrderData;
 }
 
 export interface InventoryItem {

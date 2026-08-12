@@ -13,7 +13,8 @@ import {
   Boxes, 
   ShoppingCart, 
   SendToBack,
-  Eye
+  Eye,
+  ClipboardCheck
 } from 'lucide-react';
 
 export interface ModuleItem {
@@ -26,15 +27,18 @@ export const ROLE_MODULES: Record<RoleType, ModuleItem[]> = {
   direccion: [
     { id: 'dashboard', name: 'Dashboard Gerencial', icon: BarChart3 },
     { id: 'finanzas', name: 'Finanzas y Cajas', icon: Wallet },
-    { id: 'usuarios', name: 'Usuarios y Permisos', icon: Users }
+    { id: 'usuarios', name: 'Usuarios y Permisos', icon: Users },
+    { id: 'ordentrabajo', name: 'Orden de Trabajo', icon: ClipboardCheck }
   ],
   asesor: [
     { id: 'recepcion', name: 'Recepción e Ingreso', icon: Truck },
     { id: 'cotizaciones', name: 'Presupuestos y Links', icon: FileText },
+    { id: 'ordentrabajo', name: 'Orden de Trabajo', icon: ClipboardCheck },
     { id: 'entrega', name: 'Entrega y Cierre', icon: CheckCircle2 }
   ],
   tecnico: [
     { id: 'panel', name: 'Panel de Taller', icon: Wrench },
+    { id: 'ordentrabajo', name: 'Orden de Trabajo', icon: ClipboardCheck },
     { id: 'evidencia', name: 'Evidencia Digital', icon: Camera },
     { id: 'solicitud', name: 'Solicitud de Refacciones', icon: PackagePlus }
   ],

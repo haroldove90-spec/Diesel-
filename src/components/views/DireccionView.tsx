@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useWorkshop } from '../../context/WorkshopContext';
+import { WorkOrderModule } from './WorkOrderModule';
 import { 
   TrendingUp, 
   Wrench, 
@@ -645,6 +646,11 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
             </div>
           )}
         </div>
+      )}
+
+      {/* MODULE 4: ORDEN DE TRABAJO */}
+      {activeTab === 'ordentrabajo' && (
+        <WorkOrderModule />
       )}
     </div>
   );

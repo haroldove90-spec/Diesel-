@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useWorkshop } from '../../context/WorkshopContext';
+import { WorkOrderModule } from './WorkOrderModule';
 import { ServiceOrder } from '../../types';
 import { 
   Truck, 
@@ -664,6 +665,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
             </div>
           )}
         </div>
+      )}
+
+      {/* MODULE: ORDEN DE TRABAJO */}
+      {activeTab === 'ordentrabajo' && (
+        <WorkOrderModule />
       )}
     </div>
   );

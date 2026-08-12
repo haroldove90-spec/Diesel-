@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useWorkshop } from '../../context/WorkshopContext';
+import { WorkOrderModule } from './WorkOrderModule';
 import { OSStatus } from '../../types';
 import { 
   Wrench, 
@@ -397,6 +398,11 @@ export const TecnicoView: React.FC<TecnicoViewProps> = ({ activeTab }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODULE: ORDEN DE TRABAJO */}
+      {activeTab === 'ordentrabajo' && (
+        <WorkOrderModule />
       )}
     </div>
   );

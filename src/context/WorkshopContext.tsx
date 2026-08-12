@@ -38,6 +38,7 @@ interface WorkshopContextType {
   addOrderLabor: (orderId: string, labor: Omit<OSLabor, 'id'>) => void;
   addOrderEvidence: (orderId: string, evidence: Omit<OSEvidence, 'id' | 'date'>) => void;
   liquidateOrderPayment: (orderId: string, method: 'Efectivo' | 'Tarjeta' | 'Transferencia') => void;
+  updateWorkOrderData: (orderId: string, data: any) => void;
 
   // Inventory
   inventory: InventoryItem[];
@@ -407,6 +408,19 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const updateWorkOrderData = (orderId: string, data: any) => {
+    setOrders(prev => prev.map(o => {
+      if (o.id === orderId) {
+        const updated = { ...o, workOrderData: data };
+        supabase.from('service_orders').update({
+          notes: JSON.stringify(data)
+        }).eq('id', orderId).then();
+        return updated;
+      }
+      return o;
+    }));
+  };
+
   // Inventory & Warehouse
   const addInventoryItem = (item: Omit<InventoryItem, 'id'>) => {
     const newItem: InventoryItem = {
@@ -675,6 +689,7 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       addOrderLabor,
       addOrderEvidence,
       liquidateOrderPayment,
+      updateWorkOrderData,
       inventory,
       addInventoryItem,
       updateInventoryStock,
