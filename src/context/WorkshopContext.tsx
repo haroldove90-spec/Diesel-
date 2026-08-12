@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import {
   RoleType,
   ServiceOrder,
@@ -74,6 +75,128 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [expenses, setExpenses] = useState<Expense[]>(INITIAL_EXPENSES);
   const [posReceipts, setPosReceipts] = useState<POSReceipt[]>(INITIAL_POS_RECEIPTS);
 
+  // Sync with Supabase on mount
+  useEffect(() => {
+    const fetchSupabaseData = async () => {
+      try {
+        // Fetch Orders
+        const { data: dbOrders, error: errOrders } = await supabase.from('service_orders').select('*');
+        if (!errOrders && dbOrders && dbOrders.length > 0) {
+          const parsed: ServiceOrder[] = dbOrders.map(row => ({
+            id: row.id,
+            trackingToken: row.tracking_token,
+            vehicle: typeof row.vehicle === 'string' ? JSON.parse(row.vehicle) : row.vehicle,
+            faultReason: row.fault_reason,
+            checklist: typeof row.checklist === 'string' ? JSON.parse(row.checklist) : row.checklist,
+            assignedTechnicianId: row.assigned_technician_id,
+            assignedTechnicianName: row.assigned_technician_name,
+            status: row.status,
+            parts: typeof row.parts === 'string' ? JSON.parse(row.parts) : (row.parts || []),
+            labor: typeof row.labor === 'string' ? JSON.parse(row.labor) : (row.labor || []),
+            evidences: typeof row.evidences === 'string' ? JSON.parse(row.evidences) : (row.evidences || []),
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+            estimatedCost: Number(row.estimated_cost) || 0,
+            clientApproved: row.client_approved,
+            paymentStatus: row.payment_status,
+            paymentMethod: row.payment_method,
+            warrantyDetails: row.warranty_details,
+            techNotes: row.tech_notes,
+            notes: row.notes
+          }));
+          setOrders(parsed);
+        }
+
+        // Fetch Inventory
+        const { data: dbInv, error: errInv } = await supabase.from('inventory_items').select('*');
+        if (!errInv && dbInv && dbInv.length > 0) {
+          const parsedInv: InventoryItem[] = dbInv.map(row => ({
+            id: row.id,
+            code: row.code,
+            name: row.name,
+            category: row.category,
+            brand: row.brand,
+            costPrice: Number(row.cost_price),
+            salePrice: Number(row.sale_price),
+            engineApplications: row.engine_applications,
+            stock: Number(row.stock),
+            minStock: Number(row.min_stock),
+            unit: row.unit || 'pz'
+          }));
+          setInventory(parsedInv);
+        }
+
+        // Fetch Warehouse Requests
+        const { data: dbReqs, error: errReqs } = await supabase.from('warehouse_requests').select('*');
+        if (!errReqs && dbReqs && dbReqs.length > 0) {
+          const parsedReqs: WarehouseRequest[] = dbReqs.map(row => ({
+            id: row.id,
+            osId: row.os_id,
+            vehicleInfo: row.vehicle_info,
+            technicianName: row.technician_name,
+            itemCode: row.item_code,
+            itemName: row.item_name,
+            quantity: Number(row.quantity),
+            status: row.status,
+            requestedAt: row.requested_at
+          }));
+          setWarehouseRequests(parsedReqs);
+        }
+
+        // Fetch Users
+        const { data: dbUsers, error: errUsers } = await supabase.from('users_app').select('*');
+        if (!errUsers && dbUsers && dbUsers.length > 0) {
+          const parsedUsers: User[] = dbUsers.map(row => ({
+            id: row.id,
+            name: row.name,
+            email: row.email,
+            role: row.role,
+            status: row.status,
+            specialty: row.specialty,
+            phone: row.phone
+          }));
+          setUsers(parsedUsers);
+        }
+
+        // Fetch Expenses
+        const { data: dbExp, error: errExp } = await supabase.from('expenses').select('*');
+        if (!errExp && dbExp && dbExp.length > 0) {
+          const parsedExp: Expense[] = dbExp.map(row => ({
+            id: row.id,
+            date: row.date,
+            concept: row.concept,
+            category: row.category,
+            amount: Number(row.amount),
+            supplier: row.supplier,
+            receiptNumber: row.receipt_number
+          }));
+          setExpenses(parsedExp);
+        }
+
+        // Fetch POS Receipts
+        const { data: dbPos, error: errPos } = await supabase.from('pos_receipts').select('*');
+        if (!errPos && dbPos && dbPos.length > 0) {
+          const parsedPos: POSReceipt[] = dbPos.map(row => ({
+            id: row.id,
+            folio: row.folio,
+            date: row.date,
+            items: typeof row.items === 'string' ? JSON.parse(row.items) : row.items,
+            subtotal: Number(row.subtotal),
+            tax: Number(row.tax),
+            total: Number(row.total),
+            paymentMethod: row.payment_method,
+            clientName: row.client_name
+          }));
+          setPosReceipts(parsedPos);
+        }
+      } catch (e) {
+        console.log('Supabase sync notice: Using offline/local initial state until tables are migrated.');
+      }
+    };
+
+    fetchSupabaseData();
+  }, []);
+
   // Helper to recalculate order total
   const recalculateOrderCost = (order: ServiceOrder): number => {
     const partsTotal = order.parts.reduce((sum, p) => sum + (p.quantity * p.unitPrice), 0);
@@ -101,6 +224,29 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     createdOrder.estimatedCost = recalculateOrderCost(createdOrder);
 
     setOrders(prev => [createdOrder, ...prev]);
+
+    // Save to Supabase
+    supabase.from('service_orders').insert([{
+      id: createdOrder.id,
+      tracking_token: createdOrder.trackingToken,
+      vehicle: JSON.stringify(createdOrder.vehicle),
+      fault_reason: createdOrder.faultReason,
+      checklist: JSON.stringify(createdOrder.checklist),
+      assigned_technician_id: createdOrder.assignedTechnicianId,
+      assigned_technician_name: createdOrder.assignedTechnicianName,
+      status: createdOrder.status,
+      parts: JSON.stringify(createdOrder.parts),
+      labor: JSON.stringify(createdOrder.labor),
+      evidences: JSON.stringify(createdOrder.evidences),
+      created_at: createdOrder.createdAt,
+      updated_at: createdOrder.updatedAt,
+      estimated_cost: createdOrder.estimatedCost,
+      client_approved: createdOrder.clientApproved,
+      payment_status: createdOrder.paymentStatus
+    }]).then(({ error }) => {
+      if (error) console.log('Supabase order insert error:', error.message);
+    });
+
     return createdOrder;
   };
 
@@ -108,27 +254,47 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const now = new Date().toISOString().replace('T', ' ').slice(0, 16);
     setOrders(prev => prev.map(o => {
       if (o.id === orderId) {
-        return { ...o, status: newStatus, updatedAt: now };
+        const updated = { ...o, status: newStatus, updatedAt: now };
+        supabase.from('service_orders').update({
+          status: newStatus,
+          updated_at: now
+        }).eq('id', orderId).then();
+        return updated;
       }
       return o;
     }));
   };
 
   const updateOrderTechNotes = (orderId: string, notes: string) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, techNotes: notes } : o));
+    setOrders(prev => prev.map(o => {
+      if (o.id === orderId) {
+        supabase.from('service_orders').update({ tech_notes: notes }).eq('id', orderId).then();
+        return { ...o, techNotes: notes };
+      }
+      return o;
+    }));
   };
 
   const updateOrderBudgetApproval = (orderId: string, approved: boolean) => {
     const now = new Date().toISOString().replace('T', ' ').slice(0, 16);
     setOrders(prev => prev.map(o => {
       if (o.id === orderId) {
-        return {
+        const updatedParts = o.parts.map(p => ({ ...p, status: approved ? ('aprobado_cliente' as const) : ('rechazado_cliente' as const) }));
+        const updatedLabor = o.labor.map(l => ({ ...l, status: approved ? ('aprobado_cliente' as const) : ('rechazado_cliente' as const) }));
+        const updated = {
           ...o,
           clientApproved: approved,
           updatedAt: now,
-          parts: o.parts.map(p => ({ ...p, status: approved ? 'aprobado_cliente' : 'rechazado_cliente' })),
-          labor: o.labor.map(l => ({ ...l, status: approved ? 'aprobado_cliente' : 'rechazado_cliente' }))
+          parts: updatedParts,
+          labor: updatedLabor
         };
+        supabase.from('service_orders').update({
+          client_approved: approved,
+          updated_at: now,
+          parts: JSON.stringify(updatedParts),
+          labor: JSON.stringify(updatedLabor)
+        }).eq('id', orderId).then();
+        return updated;
       }
       return o;
     }));
@@ -141,6 +307,12 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const updatedParts = [...o.parts, { ...part, id: newPartId }];
         const updatedOrder = { ...o, parts: updatedParts };
         updatedOrder.estimatedCost = recalculateOrderCost(updatedOrder);
+
+        supabase.from('service_orders').update({
+          parts: JSON.stringify(updatedParts),
+          estimated_cost: updatedOrder.estimatedCost
+        }).eq('id', orderId).then();
+
         return updatedOrder;
       }
       return o;
@@ -154,6 +326,12 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const updatedLabor = [...o.labor, { ...labor, id: newLaborId }];
         const updatedOrder = { ...o, labor: updatedLabor };
         updatedOrder.estimatedCost = recalculateOrderCost(updatedOrder);
+
+        supabase.from('service_orders').update({
+          labor: JSON.stringify(updatedLabor),
+          estimated_cost: updatedOrder.estimatedCost
+        }).eq('id', orderId).then();
+
         return updatedOrder;
       }
       return o;
@@ -167,18 +345,35 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       id: `ev-${Date.now()}`,
       date: now
     };
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, evidences: [newEv, ...o.evidences] } : o));
+    setOrders(prev => prev.map(o => {
+      if (o.id === orderId) {
+        const updatedEvs = [newEv, ...o.evidences];
+        supabase.from('service_orders').update({
+          evidences: JSON.stringify(updatedEvs)
+        }).eq('id', orderId).then();
+        return { ...o, evidences: updatedEvs };
+      }
+      return o;
+    }));
   };
 
   const liquidateOrderPayment = (orderId: string, method: 'Efectivo' | 'Tarjeta' | 'Transferencia') => {
     setOrders(prev => prev.map(o => {
       if (o.id === orderId) {
+        const warranty = 'Garantía oficial de 90 días o 15,000 KM en mano de obra y refacciones aplicadas.';
+        supabase.from('service_orders').update({
+          status: 'Finalizada',
+          payment_status: 'liquidado',
+          payment_method: method,
+          warranty_details: warranty
+        }).eq('id', orderId).then();
+
         return {
           ...o,
           status: 'Finalizada',
           paymentStatus: 'liquidado',
           paymentMethod: method,
-          warrantyDetails: 'Garantía oficial de 90 días o 15,000 KM en mano de obra y refacciones aplicadas.'
+          warrantyDetails: warranty
         };
       }
       return o;
@@ -219,12 +414,28 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       id: `inv-${Date.now()}`
     };
     setInventory(prev => [newItem, ...prev]);
+
+    supabase.from('inventory_items').insert([{
+      id: newItem.id,
+      code: newItem.code,
+      name: newItem.name,
+      category: newItem.category,
+      brand: newItem.brand,
+      cost_price: newItem.costPrice,
+      sale_price: newItem.salePrice,
+      engine_applications: newItem.engineApplications,
+      stock: newItem.stock,
+      min_stock: newItem.minStock,
+      unit: newItem.unit
+    }]).then();
   };
 
   const updateInventoryStock = (itemId: string, deltaQuantity: number) => {
     setInventory(prev => prev.map(i => {
       if (i.id === itemId) {
-        return { ...i, stock: Math.max(0, i.stock + deltaQuantity) };
+        const newStock = Math.max(0, i.stock + deltaQuantity);
+        supabase.from('inventory_items').update({ stock: newStock }).eq('id', itemId).then();
+        return { ...i, stock: newStock };
       }
       return i;
     }));
@@ -249,6 +460,18 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setWarehouseRequests(prev => [newReq, ...prev]);
 
+    supabase.from('warehouse_requests').insert([{
+      id: newReq.id,
+      os_id: newReq.osId,
+      vehicle_info: newReq.vehicleInfo,
+      technician_name: newReq.technicianName,
+      item_code: newReq.itemCode,
+      item_name: newReq.itemName,
+      quantity: newReq.quantity,
+      status: newReq.status,
+      requested_at: newReq.requestedAt
+    }]).then();
+
     // Add requested part to OS parts as 'solicitado'
     const matchingInv = inventory.find(i => i.code === itemCode);
     const unitPrice = matchingInv ? matchingInv.salePrice : 0;
@@ -268,6 +491,7 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // Mark request as surtido
     setWarehouseRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'surtido' } : r));
+    supabase.from('warehouse_requests').update({ status: 'surtido' }).eq('id', requestId).then();
 
     // Deduct stock from inventory
     const matchingInv = inventory.find(i => i.code === targetReq.itemCode);
@@ -284,6 +508,7 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           }
           return p;
         });
+        supabase.from('service_orders').update({ parts: JSON.stringify(updatedParts) }).eq('id', targetReq.osId).then();
         return { ...o, parts: updatedParts };
       }
       return o;
@@ -315,6 +540,18 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     setPosReceipts(prev => [newReceipt, ...prev]);
+
+    supabase.from('pos_receipts').insert([{
+      id: newReceipt.id,
+      folio: newReceipt.folio,
+      date: newReceipt.date,
+      items: JSON.stringify(newReceipt.items),
+      subtotal: newReceipt.subtotal,
+      tax: newReceipt.tax,
+      total: newReceipt.total,
+      payment_method: newReceipt.paymentMethod,
+      client_name: newReceipt.clientName
+    }]).then();
 
     // Deduct stock for each cart item
     cartItems.forEach(ci => {
@@ -358,6 +595,16 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setExpenses(prev => [newExp, ...prev]);
 
+    supabase.from('expenses').insert([{
+      id: newExp.id,
+      date: newExp.date,
+      concept: newExp.concept,
+      category: newExp.category,
+      amount: newExp.amount,
+      supplier: newExp.supplier,
+      receipt_number: newExp.receiptNumber
+    }]).then();
+
     // Update Cash Cut expenses
     setCashCut(prev => {
       const expensesTotal = prev.expensesTotal + newExp.amount;
@@ -392,10 +639,27 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       status: 'activo'
     };
     setUsers(prev => [...prev, newUser]);
+
+    supabase.from('users_app').insert([{
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      status: newUser.status,
+      specialty: newUser.specialty,
+      phone: newUser.phone
+    }]).then();
   };
 
   const toggleUserStatus = (userId: string) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: u.status === 'activo' ? 'inactivo' : 'activo' } : u));
+    setUsers(prev => prev.map(u => {
+      if (u.id === userId) {
+        const newStatus = u.status === 'activo' ? 'inactivo' : 'activo';
+        supabase.from('users_app').update({ status: newStatus }).eq('id', userId).then();
+        return { ...u, status: newStatus as 'activo' | 'inactivo' };
+      }
+      return u;
+    }));
   };
 
   return (
@@ -439,3 +703,4 @@ export const useWorkshop = () => {
   }
   return context;
 };
+

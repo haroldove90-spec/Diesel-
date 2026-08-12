@@ -1,0 +1,25 @@
+{
+  "short_name": "TSR",
+  "name": "TSR - Sistema de Gestión de Taller Diesel",
+  "icons": [
+    {
+      "src": "https://oejrrmtnluefhttqnutn.supabase.co/storage/v1/object/public/logo/tsricono.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://oejrrmtnluefhttqnutn.supabase.co/storage/v1/object/public/logo/tsricono.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "display": "standalone",
+  "orientation": "any",
+  "scope": "/",
+  "description": "Sistema de Gestión e Inspección Técnica para Taller Diesel TSR"
+}
