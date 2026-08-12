@@ -145,14 +145,14 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
   };
 
   return (
-    <div className="flex-1 p-4 md:p-6 bg-[#050505] overflow-y-auto min-h-0 space-y-6">
+    <div className="flex-1 p-4 md:p-6 bg-slate-50 overflow-y-auto min-h-0 space-y-6">
       {/* MODULE 1: RECEPCIÓN E INGRESO DE VEHÍCULOS */}
       {activeTab === 'recepcion' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* New Vehicle Order Form */}
-          <div className="lg:col-span-7 bg-[#0c0c0c] border border-white/10 p-5 rounded-md space-y-4">
-            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-white flex items-center gap-2">
-              <Truck className="w-4 h-4 text-amber-500" />
+          <div className="lg:col-span-7 bg-white border border-slate-200 p-5 rounded-xl space-y-4 shadow-sm">
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#002855] flex items-center gap-2">
+              <Truck className="w-4 h-4 text-blue-600" />
               <span>Registro de Ingreso de Unidad Diesel</span>
             </h2>
 
@@ -160,11 +160,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
               {/* Vehicle Specs */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-[10px] text-slate-400 uppercase block mb-1">Marca</label>
+                  <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Marca</label>
                   <select
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
-                    className="w-full bg-black border border-white/10 px-3 py-1.5 text-xs text-white rounded focus:border-amber-500 outline-none"
+                    className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 rounded-md focus:border-blue-600 outline-none"
                   >
                     <option value="Kenworth">Kenworth</option>
                     <option value="Freightliner">Freightliner</option>
@@ -176,57 +176,57 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-slate-400 uppercase block mb-1">Modelo / Motor</label>
+                  <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Modelo / Motor</label>
                   <input
                     type="text"
                     required
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
                     placeholder="T680 Cummins ISX"
-                    className="w-full bg-black border border-white/10 px-3 py-1.5 text-xs text-white rounded focus:border-amber-500 outline-none"
+                    className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 rounded-md focus:border-blue-600 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-slate-400 uppercase block mb-1">Placas</label>
+                  <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Placas</label>
                   <input
                     type="text"
                     required
                     value={plates}
                     onChange={(e) => setPlates(e.target.value.toUpperCase())}
                     placeholder="ABC-1234"
-                    className="w-full bg-black border border-white/10 px-3 py-1.5 text-xs text-white font-mono rounded focus:border-amber-500 outline-none"
+                    className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 font-mono rounded-md focus:border-blue-600 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-slate-400 uppercase block mb-1">Número de Serie (VIN)</label>
+                  <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Número de Serie (VIN)</label>
                   <input
                     type="text"
                     value={vin}
                     onChange={(e) => setVin(e.target.value.toUpperCase())}
                     placeholder="1XKDDB9X..."
-                    className="w-full bg-black border border-white/10 px-3 py-1.5 text-xs text-white font-mono rounded focus:border-amber-500 outline-none"
+                    className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 font-mono rounded-md focus:border-blue-600 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-slate-400 uppercase block mb-1">Kilometraje / Horas</label>
+                  <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Kilometraje / Horas</label>
                   <input
                     type="text"
                     value={mileage}
                     onChange={(e) => setMileage(e.target.value)}
                     placeholder="320,000 KM"
-                    className="w-full bg-black border border-white/10 px-3 py-1.5 text-xs text-white font-mono rounded focus:border-amber-500 outline-none"
+                    className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 font-mono rounded-md focus:border-blue-600 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-slate-400 uppercase block mb-1">Asignar Técnico</label>
+                  <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Asignar Técnico</label>
                   <select
                     value={techId}
                     onChange={(e) => setTechId(e.target.value)}
-                    className="w-full bg-black border border-white/10 px-3 py-1.5 text-xs text-amber-400 font-bold rounded focus:border-amber-500 outline-none"
+                    className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-blue-700 font-bold rounded-md focus:border-blue-600 outline-none"
                   >
                     {technicians.map(t => (
                       <option key={t.id} value={t.id}>{t.name} ({t.specialty})</option>
@@ -236,66 +236,66 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
               </div>
 
               {/* Client Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
                 <div>
-                  <label className="text-[10px] text-slate-400 uppercase block mb-1">Cliente / Empresa</label>
+                  <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Cliente / Empresa</label>
                   <input
                     type="text"
                     required
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
                     placeholder="Transportes Logísticos S.A."
-                    className="w-full bg-black border border-white/10 px-3 py-1.5 text-xs text-white rounded focus:border-amber-500 outline-none"
+                    className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 rounded-md focus:border-blue-600 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-slate-400 uppercase block mb-1">Teléfono WhatsApp / SMS</label>
+                  <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Teléfono WhatsApp / SMS</label>
                   <input
                     type="text"
                     value={clientPhone}
                     onChange={(e) => setClientPhone(e.target.value)}
                     placeholder="+52 81 1234 5678"
-                    className="w-full bg-black border border-white/10 px-3 py-1.5 text-xs text-white font-mono rounded focus:border-amber-500 outline-none"
+                    className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 font-mono rounded-md focus:border-blue-600 outline-none"
                   />
                 </div>
               </div>
 
               {/* Checklist Físico Express */}
-              <div className="pt-2 border-t border-white/5 space-y-2">
-                <label className="text-[10px] font-bold text-slate-300 uppercase block">Checklist Físico Inicial de Recepción</label>
+              <div className="pt-2 border-t border-slate-200 space-y-2">
+                <label className="text-[10px] font-bold text-slate-700 uppercase block">Checklist Físico Inicial de Recepción</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                  <div className="flex items-center justify-between p-2 bg-white/5 rounded">
-                    <span className="text-[11px] text-slate-300">Aceite Motor</span>
-                    <select value={chkOil} onChange={(e) => setChkOil(e.target.value as any)} className="bg-black text-[10px] px-1 py-0.5 rounded border border-white/10 text-amber-400">
+                  <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-md">
+                    <span className="text-[11px] text-slate-700 font-medium">Aceite Motor</span>
+                    <select value={chkOil} onChange={(e) => setChkOil(e.target.value as any)} className="bg-white text-[10px] px-1 py-0.5 rounded border border-slate-300 text-blue-800 font-bold">
                       <option value="ok">OK</option>
                       <option value="fail">FALLA</option>
                     </select>
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-white/5 rounded">
-                    <span className="text-[11px] text-slate-300">Frenos Aire</span>
-                    <select value={chkBrakes} onChange={(e) => setChkBrakes(e.target.value as any)} className="bg-black text-[10px] px-1 py-0.5 rounded border border-white/10 text-amber-400">
+                  <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-md">
+                    <span className="text-[11px] text-slate-700 font-medium">Frenos Aire</span>
+                    <select value={chkBrakes} onChange={(e) => setChkBrakes(e.target.value as any)} className="bg-white text-[10px] px-1 py-0.5 rounded border border-slate-300 text-blue-800 font-bold">
                       <option value="ok">OK</option>
                       <option value="fail">FALLA</option>
                     </select>
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-white/5 rounded">
-                    <span className="text-[11px] text-slate-300">Neumáticos</span>
-                    <select value={chkTires} onChange={(e) => setChkTires(e.target.value as any)} className="bg-black text-[10px] px-1 py-0.5 rounded border border-white/10 text-amber-400">
+                  <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-md">
+                    <span className="text-[11px] text-slate-700 font-medium">Neumáticos</span>
+                    <select value={chkTires} onChange={(e) => setChkTires(e.target.value as any)} className="bg-white text-[10px] px-1 py-0.5 rounded border border-slate-300 text-blue-800 font-bold">
                       <option value="ok">OK</option>
                       <option value="fail">FALLA</option>
                     </select>
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-white/5 rounded">
-                    <span className="text-[11px] text-slate-300">Luces / Tablero</span>
-                    <select value={chkLights} onChange={(e) => setChkLights(e.target.value as any)} className="bg-black text-[10px] px-1 py-0.5 rounded border border-white/10 text-amber-400">
+                  <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-md">
+                    <span className="text-[11px] text-slate-700 font-medium">Luces / Tablero</span>
+                    <select value={chkLights} onChange={(e) => setChkLights(e.target.value as any)} className="bg-white text-[10px] px-1 py-0.5 rounded border border-slate-300 text-blue-800 font-bold">
                       <option value="ok">OK</option>
                       <option value="fail">FALLA</option>
                     </select>
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-white/5 rounded">
-                    <span className="text-[11px] text-slate-300">Turbo / Intercooler</span>
-                    <select value={chkTurbo} onChange={(e) => setChkTurbo(e.target.value as any)} className="bg-black text-[10px] px-1 py-0.5 rounded border border-white/10 text-amber-400">
+                  <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-md">
+                    <span className="text-[11px] text-slate-700 font-medium">Turbo / Intercooler</span>
+                    <select value={chkTurbo} onChange={(e) => setChkTurbo(e.target.value as any)} className="bg-white text-[10px] px-1 py-0.5 rounded border border-slate-300 text-blue-800 font-bold">
                       <option value="ok">OK</option>
                       <option value="fail">FALLA</option>
                     </select>
@@ -305,20 +305,20 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
 
               {/* Fault description */}
               <div>
-                <label className="text-[10px] text-slate-400 uppercase block mb-1">Motivo de Falla / Trabajo Solicitado</label>
+                <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Motivo de Falla / Trabajo Solicitado</label>
                 <textarea
                   required
                   rows={2}
                   value={faultReason}
                   onChange={(e) => setFaultReason(e.target.value)}
                   placeholder="Describa la falla reportada por el chofer o cliente..."
-                  className="w-full bg-black border border-white/10 p-2 text-xs text-white rounded focus:border-amber-500 outline-none"
+                  className="w-full bg-white border border-slate-300 p-2 text-xs text-slate-900 rounded-md focus:border-blue-600 outline-none"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-amber-500 hover:bg-amber-400 text-black py-2.5 text-xs font-bold uppercase rounded shadow transition-all cursor-pointer"
+                className="w-full bg-[#002855] hover:bg-blue-900 text-white py-2.5 text-xs font-bold uppercase rounded-md shadow-sm transition-all cursor-pointer"
               >
                 Generar Orden de Servicio (OS)
               </button>
@@ -326,23 +326,23 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
           </div>
 
           {/* Active Orders List */}
-          <div className="lg:col-span-5 bg-[#0c0c0c] border border-white/10 p-5 rounded-md flex flex-col">
-            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-white mb-4">
+          <div className="lg:col-span-5 bg-white border border-slate-200 p-5 rounded-xl flex flex-col shadow-sm">
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#002855] mb-4">
               Órdenes Registradas en Sistema
             </h2>
 
             <div className="space-y-3 overflow-y-auto max-h-[520px] pr-1">
               {orders.map((o) => (
-                <div key={o.id} className="p-3 bg-white/5 border border-white/5 rounded space-y-2">
+                <div key={o.id} className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-amber-500 text-xs">{o.id}</span>
-                    <span className="text-[10px] uppercase font-bold text-slate-400">{o.vehicle.plates}</span>
+                    <span className="font-mono font-bold text-blue-700 text-xs">{o.id}</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600">{o.vehicle.plates}</span>
                   </div>
-                  <p className="text-xs font-bold text-white">{o.vehicle.brand} {o.vehicle.model}</p>
-                  <p className="text-[11px] text-slate-400 line-clamp-2">{o.faultReason}</p>
-                  <div className="flex items-center justify-between text-[10px] pt-2 border-t border-white/5">
-                    <span className="text-slate-400">Técnico: <strong className="text-slate-200">{o.assignedTechnicianName}</strong></span>
-                    <span className="text-amber-400 font-mono font-bold">${o.estimatedCost.toLocaleString('es-MX')}</span>
+                  <p className="text-xs font-bold text-slate-900">{o.vehicle.brand} {o.vehicle.model}</p>
+                  <p className="text-[11px] text-slate-600 line-clamp-2">{o.faultReason}</p>
+                  <div className="flex items-center justify-between text-[10px] pt-2 border-t border-slate-200">
+                    <span className="text-slate-600 font-medium">Técnico: <strong className="text-slate-900">{o.assignedTechnicianName}</strong></span>
+                    <span className="text-blue-700 font-mono font-bold">${o.estimatedCost.toLocaleString('es-MX')}</span>
                   </div>
                 </div>
               ))}
@@ -356,21 +356,21 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Select OS & Add Items */}
-            <div className="lg:col-span-8 bg-[#0c0c0c] border border-white/10 p-5 rounded-md space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+            <div className="lg:col-span-8 bg-white border border-slate-200 p-5 rounded-xl space-y-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-amber-500" />
-                  <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-white">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#002855]">
                     Cotizador de Mano de Obra y Repuestos
                   </h2>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <label className="text-[10px] text-slate-400 uppercase">Seleccionar OS:</label>
+                  <label className="text-[10px] text-slate-600 font-bold uppercase">Seleccionar OS:</label>
                   <select
                     value={selectedOSId}
                     onChange={(e) => setSelectedOSId(e.target.value)}
-                    className="bg-black border border-white/10 text-amber-500 font-mono font-bold text-xs px-2 py-1 rounded"
+                    className="bg-white border border-slate-300 text-blue-800 font-mono font-bold text-xs px-2 py-1 rounded-md"
                   >
                     {orders.map(o => (
                       <option key={o.id} value={o.id}>{o.id} - {o.vehicle.brand} ({o.vehicle.plates})</option>
@@ -382,14 +382,14 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
               {currentSelectedOS && (
                 <>
                   {/* Current OS Summary Card */}
-                  <div className="p-3 bg-white/5 border border-white/5 rounded flex justify-between items-center text-xs">
+                  <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-lg flex justify-between items-center text-xs">
                     <div>
-                      <p className="text-white font-bold">{currentSelectedOS.vehicle.brand} {currentSelectedOS.vehicle.model} ({currentSelectedOS.vehicle.plates})</p>
-                      <p className="text-[10px] text-slate-400">Cliente: {currentSelectedOS.vehicle.clientName}</p>
+                      <p className="text-slate-900 font-bold">{currentSelectedOS.vehicle.brand} {currentSelectedOS.vehicle.model} ({currentSelectedOS.vehicle.plates})</p>
+                      <p className="text-[10px] text-slate-600 font-medium">Cliente: {currentSelectedOS.vehicle.clientName}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] text-slate-400 uppercase">Estatus Presupuesto</p>
-                      <p className={`font-bold ${currentSelectedOS.clientApproved ? 'text-emerald-400' : currentSelectedOS.clientApproved === false ? 'text-red-400' : 'text-amber-400'}`}>
+                      <p className="text-[10px] text-slate-600 uppercase font-bold">Estatus Presupuesto</p>
+                      <p className={`font-bold ${currentSelectedOS.clientApproved ? 'text-emerald-700' : currentSelectedOS.clientApproved === false ? 'text-red-700' : 'text-blue-700'}`}>
                         {currentSelectedOS.clientApproved ? 'APROBADO' : currentSelectedOS.clientApproved === false ? 'RECHAZADO' : 'PENDIENTE DE VALIDACIÓN'}
                       </p>
                     </div>
@@ -398,12 +398,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
                   {/* Add Parts / Labor forms */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Add Part Form */}
-                    <form onSubmit={handleAddPartToQuote} className="p-3 bg-black border border-white/10 rounded space-y-2">
-                      <p className="text-[10px] font-bold text-amber-500 uppercase">Cargar Refacción de Inventario</p>
+                    <form onSubmit={handleAddPartToQuote} className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                      <p className="text-[10px] font-bold text-blue-800 uppercase">Cargar Refacción de Inventario</p>
                       <select
                         value={selectedPartCode}
                         onChange={(e) => setSelectedPartCode(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 p-1.5 text-xs text-white rounded"
+                        className="w-full bg-white border border-slate-300 p-1.5 text-xs text-slate-900 rounded-md"
                       >
                         {inventory.map(i => (
                           <option key={i.id} value={i.code}>{i.code} - {i.name} (${i.salePrice})</option>
@@ -416,24 +416,24 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
                           value={partQty}
                           onChange={(e) => setPartQty(e.target.value)}
                           placeholder="Cant."
-                          className="w-20 bg-white/5 border border-white/10 p-1.5 text-xs font-mono text-white rounded"
+                          className="w-20 bg-white border border-slate-300 p-1.5 text-xs font-mono text-slate-900 rounded-md"
                         />
-                        <button type="submit" className="flex-1 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold uppercase rounded py-1.5">
+                        <button type="submit" className="flex-1 bg-[#002855] hover:bg-blue-900 text-white text-xs font-bold uppercase rounded-md py-1.5 shadow-sm">
                           + Agregar Refacción
                         </button>
                       </div>
                     </form>
 
                     {/* Add Labor Form */}
-                    <form onSubmit={handleAddLaborToQuote} className="p-3 bg-black border border-white/10 rounded space-y-2">
-                      <p className="text-[10px] font-bold text-blue-400 uppercase">Cargar Mano de Obra</p>
+                    <form onSubmit={handleAddLaborToQuote} className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                      <p className="text-[10px] font-bold text-blue-600 uppercase">Cargar Mano de Obra</p>
                       <input
                         type="text"
                         required
                         value={laborDesc}
                         onChange={(e) => setLaborDesc(e.target.value)}
                         placeholder="Descripción de maniobra..."
-                        className="w-full bg-white/5 border border-white/10 p-1.5 text-xs text-white rounded"
+                        className="w-full bg-white border border-slate-300 p-1.5 text-xs text-slate-900 rounded-md"
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <input
@@ -442,44 +442,44 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
                           value={laborHours}
                           onChange={(e) => setLaborHours(e.target.value)}
                           placeholder="Hrs"
-                          className="bg-white/5 border border-white/10 p-1.5 text-xs font-mono text-white rounded"
+                          className="bg-white border border-slate-300 p-1.5 text-xs font-mono text-slate-900 rounded-md"
                         />
                         <input
                           type="number"
                           value={laborRate}
                           onChange={(e) => setLaborRate(e.target.value)}
                           placeholder="$ Tarifa/Hr"
-                          className="bg-white/5 border border-white/10 p-1.5 text-xs font-mono text-white rounded"
+                          className="bg-white border border-slate-300 p-1.5 text-xs font-mono text-slate-900 rounded-md"
                         />
                       </div>
-                      <button type="submit" className="w-full bg-blue-500 hover:bg-blue-400 text-white text-xs font-bold uppercase rounded py-1.5">
+                      <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase rounded-md py-1.5 shadow-sm">
                         + Agregar Mano de Obra
                       </button>
                     </form>
                   </div>
 
                   {/* Budget Itemized Breakdown */}
-                  <div className="space-y-2 pt-2 border-t border-white/10">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Desglose del Presupuesto Actual</p>
+                  <div className="space-y-2 pt-2 border-t border-slate-200">
+                    <p className="text-[10px] font-bold text-slate-600 uppercase">Desglose del Presupuesto Actual</p>
                     
                     <div className="space-y-1">
                       {currentSelectedOS.parts.map((p, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-xs p-2 bg-white/5 rounded">
-                          <span className="text-slate-300 font-mono">[REF] {p.name} (x{p.quantity})</span>
-                          <span className="text-amber-400 font-mono font-bold">${(p.quantity * p.unitPrice).toLocaleString('es-MX')}</span>
+                        <div key={idx} className="flex justify-between items-center text-xs p-2 bg-slate-50 border border-slate-100 rounded-md">
+                          <span className="text-slate-700 font-mono">[REF] {p.name} (x{p.quantity})</span>
+                          <span className="text-blue-800 font-mono font-bold">${(p.quantity * p.unitPrice).toLocaleString('es-MX')}</span>
                         </div>
                       ))}
                       {currentSelectedOS.labor.map((l, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-xs p-2 bg-white/5 rounded">
-                          <span className="text-slate-300">[MO] {l.description} ({l.hours} hrs @ ${l.hourlyRate}/hr)</span>
-                          <span className="text-blue-400 font-mono font-bold">${(l.hours * l.hourlyRate).toLocaleString('es-MX')}</span>
+                        <div key={idx} className="flex justify-between items-center text-xs p-2 bg-slate-50 border border-slate-100 rounded-md">
+                          <span className="text-slate-700">[MO] {l.description} ({l.hours} hrs @ ${l.hourlyRate}/hr)</span>
+                          <span className="text-blue-600 font-mono font-bold">${(l.hours * l.hourlyRate).toLocaleString('es-MX')}</span>
                         </div>
                       ))}
                     </div>
 
-                    <div className="flex justify-between items-center p-3 bg-amber-500/10 border border-amber-500/30 rounded text-xs mt-3">
-                      <span className="font-bold text-white uppercase">Costo Total Cotizado:</span>
-                      <span className="font-mono text-lg font-bold text-amber-500">${currentSelectedOS.estimatedCost.toLocaleString('es-MX')} MXN</span>
+                    <div className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs mt-3">
+                      <span className="font-bold text-[#002855] uppercase">Costo Total Cotizado:</span>
+                      <span className="font-mono text-lg font-bold text-blue-900">${currentSelectedOS.estimatedCost.toLocaleString('es-MX')} MXN</span>
                     </div>
                   </div>
                 </>
@@ -487,30 +487,30 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
             </div>
 
             {/* Tracking Link Generator Box */}
-            <div className="lg:col-span-4 bg-amber-500 p-5 rounded-md text-black flex flex-col justify-between">
+            <div className="lg:col-span-4 bg-[#002855] p-5 rounded-xl text-white flex flex-col justify-between shadow-md">
               <div>
                 <h3 className="text-xs font-black uppercase tracking-widest mb-1 flex items-center gap-2">
-                  <Share2 className="w-4 h-4" />
+                  <Share2 className="w-4 h-4 text-blue-300" />
                   Link de Seguimiento Cliente
                 </h3>
-                <p className="text-[11px] leading-snug mb-4 font-medium opacity-90">
+                <p className="text-[11px] leading-snug mb-4 font-medium text-slate-200">
                   Comparta este enlace único por WhatsApp o SMS para que el cliente supervise fotos de evidencia y apruebe la cotización en vivo.
                 </p>
 
                 {currentSelectedOS && (
                   <div className="space-y-3">
-                    <div className="p-3 bg-black/10 border border-black/10 rounded font-mono text-xs">
-                      <p className="text-[10px] font-bold uppercase opacity-60">Enlace Externo Generado:</p>
-                      <p className="text-black font-bold break-all mt-1">taller.diesel/track/{currentSelectedOS.trackingToken}</p>
+                    <div className="p-3 bg-white/10 border border-white/10 rounded-lg font-mono text-xs">
+                      <p className="text-[10px] font-bold uppercase text-slate-300">Enlace Externo Generado:</p>
+                      <p className="text-white font-bold break-all mt-1">taller.diesel/track/{currentSelectedOS.trackingToken}</p>
                     </div>
 
                     <button
                       onClick={() => copyTrackingLink(currentSelectedOS.trackingToken)}
-                      className="w-full bg-black hover:bg-slate-900 text-white py-2.5 px-3 rounded text-xs font-bold uppercase flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                      className="w-full bg-white hover:bg-slate-100 text-[#002855] py-2.5 px-3 rounded-md text-xs font-bold uppercase flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm"
                     >
                       {copiedToken === currentSelectedOS.trackingToken ? (
                         <>
-                          <Check className="w-4 h-4 text-emerald-400" />
+                          <Check className="w-4 h-4 text-emerald-600" />
                           <span>¡Enlace Copiado al Portapapeles!</span>
                         </>
                       ) : (
@@ -524,7 +524,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
                 )}
               </div>
 
-              <div className="mt-6 pt-4 border-t border-black/10 text-[10px] font-bold opacity-75 uppercase">
+              <div className="mt-6 pt-4 border-t border-white/10 text-[10px] font-bold text-slate-300 uppercase">
                 ✓ Sin necesidad de instalar app o registrar contraseña para el cliente.
               </div>
             </div>
@@ -535,41 +535,41 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
       {/* MODULE 3: ENTREGA Y CIERRE DE ÓRDENES */}
       {activeTab === 'entrega' && (
         <div className="space-y-6">
-          <div className="bg-[#0c0c0c] border border-white/10 p-5 rounded-md">
-            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-white mb-4 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#002855] mb-4 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               <span>Liquidación, Cierre de Órdenes y Garantías</span>
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {orders.map((o) => (
-                <div key={o.id} className="p-4 bg-white/5 border border-white/5 rounded-md flex flex-col justify-between space-y-3">
+                <div key={o.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col justify-between space-y-3">
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-mono text-amber-500 font-bold text-xs">{o.id}</span>
-                      <span className={`status-pill ${o.paymentStatus === 'liquidado' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                      <span className="font-mono text-blue-700 font-bold text-xs">{o.id}</span>
+                      <span className={`status-pill ${o.paymentStatus === 'liquidado' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
                         {o.paymentStatus.toUpperCase()}
                       </span>
                     </div>
 
-                    <h3 className="text-xs font-bold text-white">{o.vehicle.brand} {o.vehicle.model}</h3>
-                    <p className="text-[10px] text-slate-400 font-mono">{o.vehicle.plates} • {o.vehicle.clientName}</p>
+                    <h3 className="text-xs font-bold text-slate-900">{o.vehicle.brand} {o.vehicle.model}</h3>
+                    <p className="text-[10px] text-slate-500 font-mono">{o.vehicle.plates} • {o.vehicle.clientName}</p>
 
-                    <div className="mt-2 p-2 bg-black/40 rounded text-xs space-y-1">
+                    <div className="mt-2 p-2 bg-white border border-slate-200 rounded-md text-xs space-y-1">
                       <div className="flex justify-between text-[11px]">
-                        <span className="text-slate-400">Total a Liquidar:</span>
-                        <span className="font-mono text-amber-500 font-bold">${o.estimatedCost.toLocaleString('es-MX')}</span>
+                        <span className="text-slate-600 font-medium">Total a Liquidar:</span>
+                        <span className="font-mono text-blue-900 font-bold">${o.estimatedCost.toLocaleString('es-MX')}</span>
                       </div>
                     </div>
                   </div>
 
                   {o.paymentStatus === 'pendiente' ? (
-                    <div className="space-y-2 pt-2 border-t border-white/5">
-                      <label className="text-[10px] text-slate-400 uppercase block">Método de Cobro:</label>
+                    <div className="space-y-2 pt-2 border-t border-slate-200">
+                      <label className="text-[10px] text-slate-600 font-bold uppercase block">Método de Cobro:</label>
                       <select
                         value={settleMethod}
                         onChange={(e) => setSettleMethod(e.target.value as any)}
-                        className="w-full bg-black border border-white/10 text-xs text-white p-1.5 rounded"
+                        className="w-full bg-white border border-slate-300 text-xs text-slate-900 p-1.5 rounded-md"
                       >
                         <option value="Transferencia">Transferencia Bancaria</option>
                         <option value="Tarjeta">Tarjeta de Débito/Crédito</option>
@@ -578,19 +578,19 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
 
                       <button
                         onClick={() => liquidateOrderPayment(o.id, settleMethod)}
-                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-black py-2 text-xs font-bold uppercase rounded"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 text-xs font-bold uppercase rounded-md shadow-sm"
                       >
                         Liquidar y Entregar Unidad
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-2 pt-2 border-t border-white/5">
-                      <p className="text-[10px] text-emerald-400 font-bold uppercase">✓ Servicio Pagado y Garantía Emitida</p>
+                    <div className="space-y-2 pt-2 border-t border-slate-200">
+                      <p className="text-[10px] text-emerald-700 font-bold uppercase">✓ Servicio Pagado y Garantía Emitida</p>
                       <button
                         onClick={() => setShowReceiptModal(o)}
-                        className="w-full border border-white/10 hover:border-amber-500 text-white py-1.5 text-xs font-bold uppercase rounded flex items-center justify-center gap-1.5"
+                        className="w-full border border-slate-300 hover:border-blue-600 text-slate-800 py-1.5 text-xs font-bold uppercase rounded-md flex items-center justify-center gap-1.5"
                       >
-                        <Printer className="w-3.5 h-3.5 text-amber-500" />
+                        <Printer className="w-3.5 h-3.5 text-blue-600" />
                         <span>Imprimir Comprobante & Póliza</span>
                       </button>
                     </div>
@@ -602,61 +602,61 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
 
           {/* Receipt Preview Modal */}
           {showReceiptModal && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-[#0c0c0c] border border-white/20 p-6 rounded-lg max-w-md w-full space-y-4">
-                <div className="flex justify-between items-center border-b border-white/10 pb-2">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-amber-500">Póliza de Garantía & Ticket OS</h3>
-                  <button onClick={() => setShowReceiptModal(null)} className="text-slate-400 hover:text-white">✕</button>
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white border border-slate-200 p-6 rounded-xl max-w-md w-full space-y-4 shadow-2xl text-slate-900">
+                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-[#002855]">Póliza de Garantía & Ticket OS</h3>
+                  <button onClick={() => setShowReceiptModal(null)} className="text-slate-400 hover:text-slate-700">✕</button>
                 </div>
 
-                <div className="bg-black p-4 border border-white/10 font-mono text-xs space-y-2">
-                  <div className="text-center border-b border-white/10 pb-2">
-                    <p className="font-bold text-white text-sm">TALLER DIESEL HEAVY DUTY</p>
-                    <p className="text-[10px] text-slate-400">RFC: TDI-890123-HD1 • Monterrey, N.L.</p>
+                <div className="bg-slate-50 p-4 border border-slate-200 rounded-md font-mono text-xs space-y-2">
+                  <div className="text-center border-b border-slate-200 pb-2">
+                    <p className="font-bold text-[#002855] text-sm">TSR SONORA - TALLER DIESEL</p>
+                    <p className="text-[10px] text-slate-500">RFC: TSR-890123-HD1 • Hermosillo, Sonora</p>
                   </div>
 
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-400">Folio OS:</span>
-                    <span className="text-white font-bold">{showReceiptModal.id}</span>
+                    <span className="text-slate-500">Folio OS:</span>
+                    <span className="text-slate-900 font-bold">{showReceiptModal.id}</span>
                   </div>
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-400">Cliente:</span>
-                    <span className="text-white">{showReceiptModal.vehicle.clientName}</span>
+                    <span className="text-slate-500">Cliente:</span>
+                    <span className="text-slate-900">{showReceiptModal.vehicle.clientName}</span>
                   </div>
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-400">Unidad / Placa:</span>
-                    <span className="text-white">{showReceiptModal.vehicle.brand} ({showReceiptModal.vehicle.plates})</span>
+                    <span className="text-slate-500">Unidad / Placa:</span>
+                    <span className="text-slate-900">{showReceiptModal.vehicle.brand} ({showReceiptModal.vehicle.plates})</span>
                   </div>
 
-                  <div className="border-t border-b border-white/10 py-2 space-y-1">
+                  <div className="border-t border-b border-slate-200 py-2 space-y-1">
                     <p className="text-[10px] text-slate-500 uppercase">Mano de obra y refacciones:</p>
                     {showReceiptModal.parts.map((p, idx) => (
-                      <div key={idx} className="flex justify-between text-[10px] text-slate-300">
+                      <div key={idx} className="flex justify-between text-[10px] text-slate-700">
                         <span>{p.name} x{p.quantity}</span>
                         <span>${(p.quantity * p.unitPrice).toLocaleString('es-MX')}</span>
                       </div>
                     ))}
                     {showReceiptModal.labor.map((l, idx) => (
-                      <div key={idx} className="flex justify-between text-[10px] text-slate-300">
+                      <div key={idx} className="flex justify-between text-[10px] text-slate-700">
                         <span>{l.description}</span>
                         <span>${(l.hours * l.hourlyRate).toLocaleString('es-MX')}</span>
                       </div>
                     ))}
                   </div>
 
-                  <div className="flex justify-between font-bold text-sm text-amber-500 pt-1">
+                  <div className="flex justify-between font-bold text-sm text-blue-900 pt-1">
                     <span>TOTAL PAGADO:</span>
                     <span>${showReceiptModal.estimatedCost.toLocaleString('es-MX')} MXN</span>
                   </div>
 
-                  <div className="pt-2 border-t border-white/10 text-[9px] text-slate-400 text-center italic">
+                  <div className="pt-2 border-t border-slate-200 text-[9px] text-slate-500 text-center italic">
                     {showReceiptModal.warrantyDetails}
                   </div>
                 </div>
 
                 <button
                   onClick={() => setShowReceiptModal(null)}
-                  className="w-full bg-amber-500 text-black py-2 text-xs font-bold uppercase rounded"
+                  className="w-full bg-[#002855] text-white py-2 text-xs font-bold uppercase rounded-md shadow-sm"
                 >
                   Cerrar Impresión
                 </button>

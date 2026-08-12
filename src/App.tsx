@@ -31,7 +31,7 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#050505] text-slate-300 overflow-hidden font-sans">
+    <div className="flex flex-col h-screen w-screen bg-slate-100 text-slate-800 overflow-hidden font-sans">
       {/* Top Header with Logo, System Name, Metrics & Logout button */}
       <Header />
 
@@ -45,7 +45,7 @@ const MainLayout: React.FC = () => {
         />
 
         {/* Main Role Content View */}
-        <main className="flex-1 flex flex-col min-w-0 bg-[#050505] overflow-hidden">
+        <main className="flex-1 flex flex-col min-w-0 bg-slate-50 overflow-hidden">
           {currentRole === 'direccion' && <DireccionView activeTab={activeTab} />}
           {currentRole === 'asesor' && <AsesorView activeTab={activeTab} />}
           {currentRole === 'tecnico' && <TecnicoView activeTab={activeTab} />}

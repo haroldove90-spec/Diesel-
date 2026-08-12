@@ -1,6 +1,6 @@
 {
-  "name": "TSR",
-  "description": "Sistema Integrado de Gestión para Taller Mecánico Diesel TSR",
+  "name": "TSR SONORA",
+  "description": "TSR SONORA - Tractoservices and Diesel Parts",
   "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

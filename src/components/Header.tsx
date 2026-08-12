@@ -13,27 +13,32 @@ export const Header: React.FC = () => {
   const pendingPartsCount = warehouseRequests.filter(r => r.status === 'pendiente').length;
 
   return (
-    <header className="h-14 border-b border-white/10 px-4 md:px-6 flex items-center justify-between bg-black z-20 shrink-0 w-full">
+    <header className="h-14 border-b border-blue-900 px-4 md:px-6 flex items-center justify-between bg-[#002855] text-white z-20 shrink-0 w-full shadow-md">
       {/* Brand & System Name */}
       <div className="flex items-center gap-3">
         <img 
           src="https://oejrrmtnluefhttqnutn.supabase.co/storage/v1/object/public/logo/tsrlogo.png" 
-          alt="TSR Logo" 
-          className="h-8 w-auto object-contain max-w-[120px]"
+          alt="TSR SONORA Logo" 
+          className="h-9 w-auto object-contain max-w-[140px] drop-shadow"
         />
-        <span className="text-white font-bold tracking-widest text-xs md:text-sm uppercase flex items-center gap-2">
-          TSR <span className="font-thin opacity-50 hidden sm:inline">| Taller Diesel</span>
-        </span>
+        <div className="flex flex-col">
+          <span className="text-white font-extrabold tracking-wider text-xs md:text-sm uppercase flex items-center gap-2">
+            TSR SONORA
+          </span>
+          <span className="text-[10px] text-blue-200 tracking-widest uppercase font-medium hidden sm:inline">
+            Tractoservices & Diesel Parts
+          </span>
+        </div>
       </div>
 
       {/* Workshop Live Metrics (Minimalist pills) */}
       <div className="hidden lg:flex items-center gap-6 text-[11px] font-semibold tracking-wider uppercase">
-        <div className="flex items-center gap-2 text-slate-300">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> 
+        <div className="flex items-center gap-2 text-blue-100 bg-blue-900/50 border border-blue-700/60 px-3 py-1 rounded-full">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 
           <span>{activeUnitsCount} Unidades en Piso</span>
         </div>
-        <div className="flex items-center gap-2 text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-amber-500"></span> 
+        <div className="flex items-center gap-2 text-blue-200 bg-blue-900/40 border border-blue-800/60 px-3 py-1 rounded-full">
+          <span className="w-2 h-2 rounded-full bg-amber-400"></span> 
           <span>{pendingPartsCount} Pendientes de Repuesto</span>
         </div>
       </div>
@@ -43,15 +48,15 @@ export const Header: React.FC = () => {
         <InstallPWAButton />
 
         {roleInfo && (
-          <div className="hidden sm:flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1 rounded text-xs">
-            <span className="text-amber-500 font-bold uppercase">{roleInfo.name}</span>
+          <div className="hidden sm:flex items-center gap-2 bg-blue-900/60 border border-blue-600/50 px-3 py-1 rounded text-xs font-bold text-white shadow-sm">
+            <span className="text-blue-200 uppercase">{roleInfo.name}</span>
           </div>
         )}
 
         <button
           onClick={() => setCurrentRole(null)}
           title="Cambiar de Rol / Cerrar Sesión"
-          className="flex items-center gap-2 border border-white/10 hover:border-red-500 hover:text-red-400 text-slate-300 px-3 py-1.5 text-xs rounded transition-colors font-bold uppercase tracking-wider cursor-pointer"
+          className="flex items-center gap-2 bg-blue-900/80 hover:bg-red-600 text-white border border-blue-600 hover:border-red-500 px-3 py-1.5 text-xs rounded transition-all font-bold uppercase tracking-wider cursor-pointer shadow-sm"
         >
           <LogOut className="w-3.5 h-3.5" />
           <span className="hidden md:inline">Cerrar Sesión</span>

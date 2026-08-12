@@ -1,6 +1,6 @@
 {
-  "short_name": "TSR",
-  "name": "TSR - Sistema de Gestión de Taller Diesel",
+  "short_name": "TSR SONORA",
+  "name": "TSR SONORA - Tractoservices & Diesel Parts",
   "icons": [
     {
       "src": "https://oejrrmtnluefhttqnutn.supabase.co/storage/v1/object/public/logo/tsricono.png",
@@ -16,10 +16,10 @@
     }
   ],
   "start_url": "/",
-  "background_color": "#050505",
-  "theme_color": "#050505",
+  "background_color": "#ffffff",
+  "theme_color": "#002855",
   "display": "standalone",
   "orientation": "any",
   "scope": "/",
-  "description": "Sistema de Gestión e Inspección Técnica para Taller Diesel TSR"
+  "description": "Sistema Integrado de Gestión e Inspección Técnica TSR SONORA"
 }

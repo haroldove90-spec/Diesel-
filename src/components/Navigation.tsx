@@ -60,12 +60,12 @@ export const Navigation: React.FC<NavigationProps> = ({ role, activeTab, setActi
   return (
     <>
       {/* Desktop Left Sidebar Navigation */}
-      <aside className="hidden md:flex w-64 border-r border-white/10 flex-col justify-between py-6 bg-black shrink-0 h-full">
+      <aside className="hidden md:flex w-64 border-r border-slate-200 flex-col justify-between py-6 bg-white shrink-0 h-full shadow-sm">
         <div className="px-4">
-          <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mb-4">
+          <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em] mb-4 px-2">
             Módulos del Rol
           </p>
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             {modules.map((mod) => {
               const Icon = mod.icon;
               const isActive = activeTab === mod.id;
@@ -73,13 +73,13 @@ export const Navigation: React.FC<NavigationProps> = ({ role, activeTab, setActi
                 <button
                   key={mod.id}
                   onClick={() => setActiveTab(mod.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-xs font-semibold tracking-wide rounded transition-all cursor-pointer ${
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold tracking-wide rounded-lg transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-amber-500 text-black shadow-md font-bold'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-[#002855] text-white shadow-md font-bold'
+                      : 'text-slate-600 hover:text-blue-900 hover:bg-slate-100'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-black' : 'text-amber-500'}`} />
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-300' : 'text-blue-600'}`} />
                   <span className="truncate">{mod.name}</span>
                 </button>
               );
@@ -89,7 +89,7 @@ export const Navigation: React.FC<NavigationProps> = ({ role, activeTab, setActi
       </aside>
 
       {/* Mobile & Tablet Bottom Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-black border-t border-white/10 flex items-center justify-around z-30 px-2">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200 flex items-center justify-around z-30 px-2 shadow-lg">
         {modules.map((mod) => {
           const Icon = mod.icon;
           const isActive = activeTab === mod.id;
@@ -97,11 +97,11 @@ export const Navigation: React.FC<NavigationProps> = ({ role, activeTab, setActi
             <button
               key={mod.id}
               onClick={() => setActiveTab(mod.id)}
-              className={`flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] transition-colors ${
-                isActive ? 'text-amber-500 font-bold' : 'text-slate-400 hover:text-white'
+              className={`flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-bold transition-colors ${
+                isActive ? 'text-[#002855] font-extrabold' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <Icon className={`w-5 h-5 mb-1 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />
+              <Icon className={`w-5 h-5 mb-1 ${isActive ? 'text-[#002855]' : 'text-slate-400'}`} />
               <span className="truncate max-w-[80px]">{mod.name}</span>
             </button>
           );

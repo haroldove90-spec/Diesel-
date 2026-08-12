@@ -53,8 +53,8 @@ export const InstallPWAButton: React.FC = () => {
 
   if (isInstalled) {
     return (
-      <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded font-mono">
-        <CheckCircle className="w-3.5 h-3.5" />
+      <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-300 px-2.5 py-1 rounded font-mono font-bold">
+        <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
         <span>TSR App Instalada</span>
       </div>
     );
@@ -64,31 +64,31 @@ export const InstallPWAButton: React.FC = () => {
     <>
       <button
         onClick={handleInstallClick}
-        title="Instalar App TSR en tu dispositivo"
-        className="flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer"
+        title="Instalar App TSR SONORA en tu dispositivo"
+        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white border border-blue-400 px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-sm"
       >
-        <Download className="w-3.5 h-3.5 text-amber-500 animate-bounce" />
-        <span className="hidden sm:inline">Instalar TSR</span>
+        <Download className="w-3.5 h-3.5 text-white animate-bounce" />
+        <span className="hidden sm:inline">Instalar App</span>
         <span className="sm:hidden">App</span>
       </button>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0c0c0c] border border-white/20 p-6 rounded-lg max-w-sm w-full space-y-4 text-slate-200">
-            <div className="flex justify-between items-center border-b border-white/10 pb-3">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 p-6 rounded-xl max-w-sm w-full space-y-4 text-slate-800 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2">
                 <img 
                   src="https://oejrrmtnluefhttqnutn.supabase.co/storage/v1/object/public/logo/tsricono.png" 
-                  alt="TSR Icon" 
-                  className="w-6 h-6 rounded object-contain"
+                  alt="TSR SONORA Icon" 
+                  className="w-7 h-7 rounded object-contain"
                 />
-                <h3 className="text-xs font-bold uppercase tracking-widest text-amber-500">
-                  Instalar App TSR
+                <h3 className="text-xs font-black uppercase tracking-widest text-[#002855]">
+                  Instalar TSR SONORA
                 </h3>
               </div>
               <button 
                 onClick={() => setShowModal(false)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-slate-700 p-1"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -96,28 +96,28 @@ export const InstallPWAButton: React.FC = () => {
 
             <div className="space-y-3 text-xs">
               <p>
-                Para instalar la aplicación <strong>TSR</strong> en tu dispositivo móvil o computadora:
+                Para instalar la aplicación <strong>TSR SONORA</strong> en tu dispositivo móvil o computadora:
               </p>
 
               {isIOS ? (
-                <div className="p-3 bg-white/5 border border-white/10 rounded space-y-2 text-[11px]">
-                  <p className="font-bold text-amber-400 flex items-center gap-1.5">
-                    <Smartphone className="w-4 h-4" /> En iPhone / iPad (Safari):
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2 text-[11px]">
+                  <p className="font-bold text-[#002855] flex items-center gap-1.5">
+                    <Smartphone className="w-4 h-4 text-blue-600" /> En iPhone / iPad (Safari):
                   </p>
-                  <ol className="list-decimal list-inside space-y-1 text-slate-300">
-                    <li>Toca el botón <strong>Compartir</strong> <span className="text-amber-400">⎋</span> abajo.</li>
+                  <ol className="list-decimal list-inside space-y-1 text-slate-700">
+                    <li>Toca el botón <strong>Compartir</strong> <span className="text-blue-600">⎋</span> abajo.</li>
                     <li>Selecciona <strong>"Agregar al inicio"</strong>.</li>
-                    <li>¡Listo! Tendrás el icono de TSR en tu pantalla.</li>
+                    <li>¡Listo! Tendrás el icono de TSR SONORA en tu pantalla.</li>
                   </ol>
                 </div>
               ) : (
-                <div className="p-3 bg-white/5 border border-white/10 rounded space-y-2 text-[11px]">
-                  <p className="font-bold text-amber-400 flex items-center gap-1.5">
-                    <Info className="w-4 h-4" /> En Chrome / Android / PC:
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2 text-[11px]">
+                  <p className="font-bold text-[#002855] flex items-center gap-1.5">
+                    <Info className="w-4 h-4 text-blue-600" /> En Chrome / Android / PC:
                   </p>
-                  <ol className="list-decimal list-inside space-y-1 text-slate-300">
-                    <li>Abre el menú de opciones de tu navegador <span className="text-amber-400 font-bold">⋮</span></li>
-                    <li>Haz clic en <strong>"Instalar TSR"</strong> o <strong>"Agregar a la pantalla principal"</strong>.</li>
+                  <ol className="list-decimal list-inside space-y-1 text-slate-700">
+                    <li>Abre el menú de opciones de tu navegador <span className="text-blue-600 font-bold">⋮</span></li>
+                    <li>Haz clic en <strong>"Instalar TSR SONORA"</strong> o <strong>"Agregar a la pantalla principal"</strong>.</li>
                   </ol>
                 </div>
               )}
@@ -125,7 +125,7 @@ export const InstallPWAButton: React.FC = () => {
 
             <button
               onClick={() => setShowModal(false)}
-              className="w-full bg-amber-500 text-black py-2 text-xs font-bold uppercase rounded cursor-pointer hover:bg-amber-400 transition-colors"
+              className="w-full bg-[#002855] text-white py-2 text-xs font-bold uppercase rounded-lg cursor-pointer hover:bg-blue-900 transition-colors shadow-md"
             >
               Entendido
             </button>
