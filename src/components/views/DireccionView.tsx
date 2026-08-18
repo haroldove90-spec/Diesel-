@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { useWorkshop } from '../../context/WorkshopContext';
 import { WorkOrderModule } from './WorkOrderModule';
+import { ReportesVentasModule } from '../modules/ReportesVentasModule';
+import { FinanzasBancosModule } from '../modules/FinanzasBancosModule';
+import { ComprasModule } from '../modules/ComprasModule';
+import { ContactosModule } from '../modules/ContactosModule';
 import { 
   TrendingUp, 
   Wrench, 
@@ -297,207 +301,24 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
         </div>
       )}
 
-      {/* MODULE 2: ADMINISTRACIÓN FINANCIERA Y CAJAS */}
+      {/* MODULE 2: ADMINISTRACIÓN FINANCIERA Y BANCOS */}
       {activeTab === 'finanzas' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Daily Cash Cut Box */}
-            <div className="lg:col-span-7 bg-white border border-slate-200 p-5 rounded-xl space-y-4 shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                <div>
-                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#002855]">
-                    Corte y Arqueo de Caja Diario
-                  </h2>
-                  <p className="text-[10px] text-slate-500 font-mono mt-0.5">
-                    Fecha: {cashCut.date} • Estado: <strong className={cashCut.status === 'abierto' ? 'text-emerald-600' : 'text-red-600'}>{cashCut.status.toUpperCase()}</strong>
-                  </p>
-                </div>
-                <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
-                  <DollarSign className="w-5 h-5" />
-                </div>
-              </div>
+        <FinanzasBancosModule />
+      )}
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold">Fondo Inicial</p>
-                  <p className="text-base font-mono font-bold text-slate-900 mt-0.5">${cashCut.initialCash.toLocaleString('es-MX')}</p>
-                </div>
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold">Ventas Efectivo</p>
-                  <p className="text-base font-mono font-bold text-emerald-600 mt-0.5">${cashCut.cashSales.toLocaleString('es-MX')}</p>
-                </div>
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold">Ventas Tarjeta</p>
-                  <p className="text-base font-mono font-bold text-blue-600 mt-0.5">${cashCut.cardSales.toLocaleString('es-MX')}</p>
-                </div>
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold">Transferencias</p>
-                  <p className="text-base font-mono font-bold text-purple-600 mt-0.5">${cashCut.transferSales.toLocaleString('es-MX')}</p>
-                </div>
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold">Gastos de Caja</p>
-                  <p className="text-base font-mono font-bold text-red-600 mt-0.5">-${cashCut.expensesTotal.toLocaleString('es-MX')}</p>
-                </div>
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-[10px] text-blue-800 uppercase font-bold">Efectivo Calculado</p>
-                  <p className="text-base font-mono font-bold text-blue-900 mt-0.5">${cashCut.calculatedCash.toLocaleString('es-MX')}</p>
-                </div>
-              </div>
+      {/* MODULE: VENTAS Y REPORTES */}
+      {activeTab === 'reportes' && (
+        <ReportesVentasModule />
+      )}
 
-              {cashCut.status === 'abierto' ? (
-                <form onSubmit={handleCloseCashCut} className="pt-3 border-t border-slate-200 space-y-3">
-                  <p className="text-xs font-bold text-slate-900 uppercase">Realizar Arqueo y Cierre de Caja</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Efectivo Contado en Físico ($)</label>
-                      <input 
-                        type="number"
-                        value={actualCashInput}
-                        onChange={(e) => setActualCashInput(e.target.value)}
-                        placeholder={cashCut.calculatedCash.toString()}
-                        className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 font-mono rounded-md focus:border-blue-600 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Notas de Arqueo</label>
-                      <input 
-                        type="text"
-                        value={closeNotesInput}
-                        onChange={(e) => setCloseNotesInput(e.target.value)}
-                        placeholder="Observaciones de caja..."
-                        className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 rounded-md focus:border-blue-600 outline-none"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-[#002855] text-white py-2 text-xs font-bold uppercase rounded-md hover:bg-blue-900 transition-colors shadow-sm"
-                  >
-                    Finalizar y Cerrar Corte de Caja
-                  </button>
-                </form>
-              ) : (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs space-y-1">
-                  <p className="text-red-700 font-bold uppercase">Corte Cerrado Oficialmente</p>
-                  <p className="text-slate-700">Diferencia Registrada: <strong className="font-mono text-slate-900">${cashCut.difference.toLocaleString('es-MX')}</strong></p>
-                  <p className="text-slate-500 italic text-[10px]">{cashCut.notes}</p>
-                </div>
-              )}
-            </div>
+      {/* MODULE: COMPRAS Y PROVEEDORES */}
+      {activeTab === 'compras' && (
+        <ComprasModule />
+      )}
 
-            {/* Expense & Purchases Registration Form */}
-            <div className="lg:col-span-5 bg-white border border-slate-200 p-5 rounded-xl space-y-4 shadow-sm">
-              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#002855]">
-                Registro de Compras y Gastos
-              </h2>
-
-              <form onSubmit={handleAddExpense} className="space-y-3">
-                <div>
-                  <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Concepto del Gasto</label>
-                  <input
-                    type="text"
-                    required
-                    value={expenseConcept}
-                    onChange={(e) => setExpenseConcept(e.target.value)}
-                    placeholder="Ej. Compra de anticongelante concentrado"
-                    className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 rounded-md focus:border-blue-600 outline-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Categoría</label>
-                    <select
-                      value={expenseCategory}
-                      onChange={(e) => setExpenseCategory(e.target.value as any)}
-                      className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 rounded-md focus:border-blue-600 outline-none"
-                    >
-                      <option value="Repuestos">Repuestos</option>
-                      <option value="Herramientas">Herramientas</option>
-                      <option value="Servicios">Servicios</option>
-                      <option value="Nómina">Nómina</option>
-                      <option value="Otros">Otros</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Monto ($ MXN)</label>
-                    <input
-                      type="number"
-                      required
-                      value={expenseAmount}
-                      onChange={(e) => setExpenseAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 font-mono rounded-md focus:border-blue-600 outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1">Proveedor</label>
-                    <input
-                      type="text"
-                      value={expenseSupplier}
-                      onChange={(e) => setExpenseSupplier(e.target.value)}
-                      placeholder="Nombre del proveedor"
-                      className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 rounded-md focus:border-blue-600 outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] text-slate-600 font-bold uppercase block mb-1"># Factura / Ticket</label>
-                    <input
-                      type="text"
-                      value={expenseReceipt}
-                      onChange={(e) => setExpenseReceipt(e.target.value)}
-                      placeholder="FAC-1234"
-                      className="w-full bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 font-mono rounded-md focus:border-blue-600 outline-none"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 text-xs font-bold uppercase rounded-md transition-all mt-2 shadow-sm"
-                >
-                  Registrar Gasto Operativo
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* Expenses Log Table */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#002855] mb-4">
-              Histórico de Compras y Gastos del Taller
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 text-slate-700 border-b border-slate-200 uppercase font-bold">
-                  <tr>
-                    <th className="p-3">Fecha</th>
-                    <th className="p-3">Concepto</th>
-                    <th className="p-3">Categoría</th>
-                    <th className="p-3">Proveedor / Comprobante</th>
-                    <th className="p-3 text-right">Monto</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {expenses.map((exp) => (
-                    <tr key={exp.id} className="hover:bg-slate-50">
-                      <td className="p-3 font-mono text-slate-500">{exp.date}</td>
-                      <td className="p-3 text-slate-900 font-bold">{exp.concept}</td>
-                      <td className="p-3"><span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-bold uppercase">{exp.category}</span></td>
-                      <td className="p-3 text-slate-600">{exp.supplier || 'N/A'} • {exp.receiptNumber}</td>
-                      <td className="p-3 text-right font-mono font-bold text-red-600">-${exp.amount.toLocaleString('es-MX')}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+      {/* MODULE: CONTACTOS Y CLIENTES */}
+      {activeTab === 'contactos' && (
+        <ContactosModule initialTab="clientes" />
       )}
 
       {/* MODULE 3: GESTIÓN DE USUARIOS Y PERMISOS */}

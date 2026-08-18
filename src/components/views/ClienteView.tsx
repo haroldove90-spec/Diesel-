@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useWorkshop } from '../../context/WorkshopContext';
 import { OSStatus } from '../../types';
+import { CitasModule } from '../modules/CitasModule';
 import { 
   Truck, 
   CheckCircle2, 
@@ -17,8 +18,17 @@ interface ClienteViewProps {
   activeTab: string;
 }
 
-export const ClienteView: React.FC<ClienteViewProps> = () => {
+export const ClienteView: React.FC<ClienteViewProps> = ({ activeTab }) => {
   const { orders, updateOrderBudgetApproval } = useWorkshop();
+
+  // If user navigated to public appointment booking
+  if (activeTab === 'agendar') {
+    return (
+      <div className="flex-1 flex flex-col h-full bg-slate-50 overflow-y-auto">
+        <CitasModule isExternalMode={true} />
+      </div>
+    );
+  }
 
   // Selected Order by Token
   const [activeToken, setActiveToken] = useState<string>(orders[0]?.trackingToken || 'OS-9283-TRK');

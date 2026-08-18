@@ -6,7 +6,17 @@ import {
   User, 
   CashCut, 
   Expense,
-  POSReceipt
+  POSReceipt,
+  Appointment,
+  BillingOrder,
+  InvoiceRecord,
+  ToolItem,
+  ToolAssignmentLog,
+  PurchaseOrder,
+  ClientContact,
+  SupplierContact,
+  BankAccount,
+  FinancialMovement
 } from '../types';
 
 export const ROLES: UserRoleInfo[] = [
@@ -48,11 +58,13 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
     code: 'P55126',
     name: 'Filtro de Aceite Donaldson Lube',
     category: 'Mantenimiento',
+    subcategory: 'Filtros de Aceite',
     brand: 'Donaldson',
     costPrice: 450,
     salePrice: 850,
     engineApplications: 'Cummins ISX / Detroit DD15 / Paccar MX13',
-    stock: 2,
+    equivalences: ['Fleetguard LF14000NN', 'Baldwin BD7154', 'Wix 57746XD', 'Cummins 4367100'],
+    stock: 8,
     minStock: 10,
     unit: 'pz'
   },
@@ -61,11 +73,13 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
     code: 'BOS-INJ-4307',
     name: 'Kit Inyectores Diesel Reman Bosch',
     category: 'Motor / Inyección',
+    subcategory: 'Inyectores Common Rail',
     brand: 'Bosch',
     costPrice: 14500,
     salePrice: 21800,
     engineApplications: 'Cummins ISX15 High Pressure',
-    stock: 1,
+    equivalences: ['Cummins 4062569RX', 'Cummins 2872405', 'Delphi EX634307'],
+    stock: 3,
     minStock: 3,
     unit: 'juego'
   },
@@ -74,11 +88,13 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
     code: 'HOL-TURB-351',
     name: 'Turbocargador Holset HE351VE VGT',
     category: 'Motor / Turbo',
+    subcategory: 'Turbos Geometría Variable',
     brand: 'Holset',
     costPrice: 18900,
     salePrice: 27500,
-    engineApplications: 'Cummins ISX / ISM',
-    stock: 3,
+    engineApplications: 'Cummins ISX / ISM / QSM11',
+    equivalences: ['Cummins 2838153', 'Cummins 4045034RX', 'BorgWarner 179035'],
+    stock: 4,
     minStock: 2,
     unit: 'pz'
   },
@@ -87,10 +103,12 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
     code: 'DD15-WP-992',
     name: 'Bomba de Agua Heavy Duty Detroit',
     category: 'Sistemas de Enfriamiento',
+    subcategory: 'Bombas de Agua',
     brand: 'Detroit Diesel',
     costPrice: 3200,
     salePrice: 4900,
     engineApplications: 'Detroit Diesel DD13 / DD15',
+    equivalences: ['Detroit A4722001601', 'Freightliner EA4722001601', 'Airtex AW6688'],
     stock: 5,
     minStock: 4,
     unit: 'pz'
@@ -98,54 +116,62 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
   {
     id: 'inv-5',
     code: 'BEN-BRK-4001',
-    name: 'Pastillas de Freno Neumático Bendix',
-    category: 'Frenos y Suspensión',
+    name: 'Válvula Reguladora de Freno Bendix R-12',
+    category: 'Sistema de Frenos',
+    subcategory: 'Válvulas Neumáticas',
     brand: 'Bendix',
     costPrice: 1100,
     salePrice: 1850,
-    engineApplications: 'Universal Kenworth / Freightliner / Navistar',
-    stock: 14,
-    minStock: 8,
-    unit: 'juego'
+    engineApplications: 'Universal Tractocamión / Remolques',
+    equivalences: ['Bendix 102626', 'Midland KN28140', 'Wabco 9730110000'],
+    stock: 7,
+    minStock: 5,
+    unit: 'pz'
   },
   {
     id: 'inv-6',
-    code: 'ROT-15W40-20L',
-    name: 'Aceite Mineral 15W-40 Shell Rotella T4 (20 Litros)',
-    category: 'Lubricantes y Fluidos',
-    brand: 'Shell Rotella',
-    costPrice: 1650,
-    salePrice: 2400,
-    engineApplications: 'Motores Diesel Heavy Duty Euro IV/V',
-    stock: 18,
-    minStock: 12,
-    unit: 'cubeta'
+    code: 'FLE-FF5776',
+    name: 'Filtro Separador Diésel Fleetguard',
+    category: 'Mantenimiento',
+    subcategory: 'Separadores de Agua',
+    brand: 'Fleetguard',
+    costPrice: 620,
+    salePrice: 1150,
+    engineApplications: 'Cummins ISX / Detroit DD15',
+    equivalences: ['Donaldson P550888', 'Baldwin BF1386-O', 'Racor R90P'],
+    stock: 12,
+    minStock: 6,
+    unit: 'pz'
   },
   {
     id: 'inv-7',
-    code: 'EGR-BW-8821',
-    name: 'Válvula EGR Reenfriada BorgWarner',
-    category: 'Emisiones',
-    brand: 'BorgWarner',
-    costPrice: 8900,
-    salePrice: 13200,
-    engineApplications: 'Navistar MaxxForce 11/13',
-    stock: 0,
-    minStock: 2,
-    unit: 'pz'
+    code: 'ROT-15W40',
+    name: 'Aceite Mineral Shell Rotella 15W-40',
+    category: 'Lubricantes',
+    subcategory: 'Aceites de Motor',
+    brand: 'Shell',
+    costPrice: 1850,
+    salePrice: 2800,
+    engineApplications: 'Heavy Duty Diésel API CK-4 / CJ-4',
+    equivalences: ['Mobil Delvac 1300 Super', 'Chevron Delo 400 SDE', 'Castrol Vecton'],
+    stock: 15,
+    minStock: 8,
+    unit: 'cubeta 19L'
   },
   {
     id: 'inv-8',
-    code: 'FLE-FF5776',
-    name: 'Filtro de Combustible Separador Agua Fleetguard',
-    category: 'Mantenimiento',
-    brand: 'Fleetguard',
+    code: 'KEM-DEF-20L',
+    name: 'Fluido de Escape Diésel DEF / Urea 20L',
+    category: 'Emisiones',
+    subcategory: 'Urea Automotriz',
+    brand: 'Kem',
     costPrice: 380,
     salePrice: 620,
-    engineApplications: 'Cummins QSB / ISB / ISX',
-    stock: 25,
-    minStock: 15,
-    unit: 'pz'
+    engineApplications: 'Sistemas SCR Euro V / EPA 2010+',
+    equivalences: ['BlueDEF 2.5 Gal', 'TerraCair DEF', 'Peak Commercial DEF'],
+    stock: 22,
+    minStock: 10,
+    unit: 'bidon 20L'
   }
 ];
 
@@ -404,5 +430,462 @@ export const INITIAL_POS_RECEIPTS: POSReceipt[] = [
     total: 3410.4,
     paymentMethod: 'Efectivo',
     clientName: 'Taller Flotilla Express'
+  }
+];
+
+// 1. CITAS INICIALES
+export const INITIAL_APPOINTMENTS: Appointment[] = [
+  {
+    id: 'APT-1001',
+    clientName: 'Transportes Logísticos del Norte S.A.',
+    clientPhone: '+52 81 1892 4029',
+    clientEmail: 'mantenimiento@logisticanorte.com.mx',
+    vehiclePlates: 'ABC-1234',
+    vehicleBrandModel: 'Kenworth T680',
+    vehicleYear: '2021',
+    preferredDate: '2026-08-19',
+    preferredTime: '08:30 AM',
+    serviceType: 'Correctivo',
+    serviceReason: 'Pérdida de potencia en pendientes y humo negro intermitente.',
+    status: 'Pendiente',
+    source: 'Portal Web Cliente',
+    createdAt: '2026-08-18 10:15'
+  },
+  {
+    id: 'APT-1002',
+    clientName: 'Fletes y Enlaces del Pacífico',
+    clientPhone: '+52 662 214 8890',
+    clientEmail: 'taller@fletespacifico.com',
+    vehiclePlates: 'XYZ-9876',
+    vehicleBrandModel: 'Freightliner Cascadia',
+    vehicleYear: '2020',
+    preferredDate: '2026-08-19',
+    preferredTime: '10:00 AM',
+    serviceType: 'Preventivo',
+    serviceReason: 'Mantenimiento preventivo tipo B (Aceite, filtros y calibración de válvulas).',
+    status: 'Confirmada',
+    bayAssigned: 'Bahía 2 - Diésel Pesado',
+    source: 'Asesor Interno',
+    createdAt: '2026-08-18 11:30'
+  },
+  {
+    id: 'APT-1003',
+    clientName: 'Cargas Rápidas de Sonora',
+    clientPhone: '+52 662 312 9011',
+    clientEmail: 'operaciones@cargasgrr.com',
+    vehiclePlates: 'SON-7712',
+    vehicleBrandModel: 'International ProStar',
+    vehicleYear: '2019',
+    preferredDate: '2026-08-18',
+    preferredTime: '07:30 AM',
+    serviceType: 'Diagnóstico',
+    serviceReason: 'Código de falla SCR / Calentador DEF en tablero.',
+    status: 'Convertida',
+    convertedOrderId: 'OS-9283',
+    source: 'Portal Web Cliente',
+    createdAt: '2026-08-17 16:20'
+  }
+];
+
+// 3. ÓRDENES DE COBRO Y BANDEJA DE FACTURACIÓN
+export const INITIAL_BILLING_ORDERS: BillingOrder[] = [
+  {
+    id: 'COB-1091',
+    sourceType: 'Mostrador',
+    referenceId: 'TICK-901',
+    clientName: 'Taller Flotilla Express',
+    clientRfc: 'TFE980412HL8',
+    clientEmail: 'pagos@flotillaexpress.mx',
+    subtotal: 2940,
+    taxIva: 470.4,
+    total: 3410.4,
+    status: 'Pagado',
+    paymentMethod: 'Efectivo',
+    paidAt: '2026-08-05 09:45',
+    dispatchedInWarehouse: true,
+    warehouseVoucherNumber: 'VALE-8891',
+    itemsSummary: '2x Filtro Donaldson + 2x Urea DEF 20L',
+    createdAt: '2026-08-05 09:40'
+  },
+  {
+    id: 'COB-1092',
+    sourceType: 'Taller',
+    referenceId: 'OS-9283',
+    clientName: 'Transportes Logísticos del Norte S.A.',
+    clientRfc: 'TLN1402219X3',
+    clientEmail: 'facturacion@logisticanorte.com.mx',
+    subtotal: 36700,
+    taxIva: 5872,
+    total: 42572,
+    status: 'Facturado',
+    paymentMethod: 'Transferencia',
+    paidAt: '2026-08-05 16:30',
+    dispatchedInWarehouse: true,
+    invoiceId: 'FAC-4019',
+    itemsSummary: 'Servicio Correctivo Kenworth T680 (Inyectores, Mangueras y Mano de Obra)',
+    createdAt: '2026-08-05 15:45'
+  },
+  {
+    id: 'COB-1093',
+    sourceType: 'Taller',
+    referenceId: 'OS-9284',
+    clientName: 'Fletes y Enlaces del Pacífico',
+    clientRfc: 'FEP091103KA1',
+    clientEmail: 'admon@fletespacifico.com',
+    subtotal: 31400,
+    taxIva: 5024,
+    total: 36424,
+    status: 'Pendiente de Pago',
+    dispatchedInWarehouse: false,
+    itemsSummary: 'Servicio Turbo Cascadia DD15 (Holset HE351VE + Diagnóstico)',
+    createdAt: '2026-08-18 12:00'
+  }
+];
+
+// FACTURAS CFDI EMITIDAS
+export const INITIAL_INVOICES: InvoiceRecord[] = [
+  {
+    id: 'inv-cfdi-1',
+    folio: 'FAC-4019',
+    uuid: '4A9F21E0-8D3C-4C91-912A-FB3948A2019C',
+    orderReferenceId: 'OS-9283',
+    clientName: 'Transportes Logísticos del Norte S.A. de C.V.',
+    rfc: 'TLN1402219X3',
+    regimenFiscal: '601 - General de Ley Personas Morales',
+    usoCfdi: 'G03 - Gastos en general',
+    email: 'facturacion@logisticanorte.com.mx',
+    subtotal: 36700,
+    taxIva: 5872,
+    total: 42572,
+    paymentMethod: 'Transferencia',
+    paymentForm: '03 - Transferencia electrónica',
+    date: '2026-08-05 16:45',
+    xmlData: '<?xml version="1.0" encoding="UTF-8"?><cfdi:Comprobante Version="4.0" Folio="4019" SubTotal="36700.00" Total="42572.00" TipoDeComprobante="I" xmlns:cfdi="http://www.sat.gob.mx/cfd/4"><cfdi:Emisor Rfc="TSR180901HD9" Nombre="TRACTOSERVICES AND DIESEL PARTS TSR SONORA SA DE CV" RegimenFiscal="601"/><cfdi:Receptor Rfc="TLN1402219X3" Nombre="TRANSPORTES LOGISTICOS DEL NORTE SA DE CV" UsoCFDI="G03"/></cfdi:Comprobante>',
+    sentByEmail: true,
+    emailSentAt: '2026-08-05 16:46'
+  }
+];
+
+// 5. CONTROL INTERNO DE HERRAMIENTAS
+export const INITIAL_TOOLS: ToolItem[] = [
+  {
+    id: 'tool-1',
+    code: 'HRR-ESC-01',
+    name: 'Scanner Diagnóstico Cummins Inline 7 HD',
+    brand: 'Cummins Genuine',
+    serialNumber: 'INL7-994021',
+    category: 'Diagnóstico Electrónico',
+    status: 'Asignada',
+    currentTechnicianId: 'tech-1',
+    currentTechnicianName: 'Ricardo M.',
+    assignedDate: '2026-08-18 08:00',
+    condition: 'Excelente',
+    notes: 'Incluye adaptador 9 pines y cable USB blindado.'
+  },
+  {
+    id: 'tool-2',
+    code: 'HRR-TOR-02',
+    name: 'Torquímetro Digital 3/4" (100 - 600 Ft-Lb)',
+    brand: 'Snap-On',
+    serialNumber: 'SN-TORQ-8812',
+    category: 'Torque / Medición',
+    status: 'Disponible',
+    condition: 'Excelente',
+    notes: 'Calibrado el 2026-08-05 por laboratorio acreditado.'
+  },
+  {
+    id: 'tool-3',
+    code: 'HRR-EXT-03',
+    name: 'Extractor Hidráulico de Camisas de Cilindro ISX',
+    brand: 'OTC Tools',
+    serialNumber: 'OTC-5040-HD',
+    category: 'Extractor / Prensa',
+    status: 'Disponible',
+    condition: 'Bueno',
+    notes: 'Juego de adaptadores para camisas de 15L.'
+  },
+  {
+    id: 'tool-4',
+    code: 'HRR-PRE-04',
+    name: 'Pistola de Impacto Neumática 1" Heavy Duty',
+    brand: 'Ingersoll Rand',
+    serialNumber: 'IR-285B-6',
+    category: 'Neumática / Taller',
+    status: 'Asignada',
+    currentTechnicianId: 'tech-3',
+    currentTechnicianName: 'Daniel O.',
+    assignedDate: '2026-08-18 09:30',
+    condition: 'Bueno',
+    notes: 'Asignada para desmontaje de ruedas y tambores.'
+  },
+  {
+    id: 'tool-5',
+    code: 'HRR-DIAG-05',
+    name: 'Kit de Presión de Riel Common Rail (2500 Bar)',
+    brand: 'Bosch Diagnostic',
+    serialNumber: 'BOS-CR-771',
+    category: 'Especial Diésel',
+    status: 'Disponible',
+    condition: 'Excelente',
+    notes: 'Para pruebas de bomba de alta presión CP4 y XPI.'
+  }
+];
+
+export const INITIAL_TOOL_LOGS: ToolAssignmentLog[] = [
+  {
+    id: 'tlog-1',
+    toolId: 'tool-1',
+    toolCode: 'HRR-ESC-01',
+    toolName: 'Scanner Diagnóstico Cummins Inline 7 HD',
+    technicianId: 'tech-1',
+    technicianName: 'Ricardo M.',
+    assignedDate: '2026-08-18 08:00',
+    status: 'Activa',
+    responsibilitySigned: true,
+    observations: 'Entrega en maletín de uso rudo con todos sus cables.'
+  },
+  {
+    id: 'tlog-2',
+    toolId: 'tool-4',
+    toolCode: 'HRR-PRE-04',
+    toolName: 'Pistola de Impacto Neumática 1" Heavy Duty',
+    technicianId: 'tech-3',
+    technicianName: 'Daniel O.',
+    assignedDate: '2026-08-18 09:30',
+    status: 'Activa',
+    responsibilitySigned: true,
+    observations: 'Se entrega lubricada.'
+  }
+];
+
+// 6. COMPRAS Y PROVEEDORES
+export const INITIAL_PURCHASE_ORDERS: PurchaseOrder[] = [
+  {
+    id: 'OC-8021',
+    supplierId: 'prov-1',
+    supplierName: 'Distribuidora Diésel del Noroeste S.A.',
+    supplierEmail: 'ventas@dieselnoroeste.mx',
+    date: '2026-08-16',
+    status: 'Recibida en Almacén',
+    isDirectExpense: false,
+    expenseCategory: 'Refacciones Almacén',
+    paymentMethod: 'Transferencia',
+    bankAccountId: 'bank-1',
+    items: [
+      { id: 'poi-1', partCode: 'P55126', description: 'Filtro de Aceite Donaldson Lube', quantity: 15, unitCost: 450, total: 6750 },
+      { id: 'poi-2', partCode: 'FLE-FF5776', description: 'Filtro Separador Diésel Fleetguard', quantity: 20, unitCost: 620, total: 12400 }
+    ],
+    subtotal: 19150,
+    taxIva: 3064,
+    total: 22214,
+    notes: 'Surtido para stock general de almacén quincenal.',
+    sentAt: '2026-08-16 10:00',
+    receivedAt: '2026-08-17 14:30'
+  },
+  {
+    id: 'OC-8022',
+    supplierId: 'prov-2',
+    supplierName: 'Lubricantes y Químicos Industriales',
+    supplierEmail: 'pedidos@lubriq.com.mx',
+    date: '2026-08-18',
+    status: 'Enviada a Proveedor',
+    isDirectExpense: false,
+    expenseCategory: 'Refacciones Almacén',
+    paymentMethod: 'Crédito Proveedor',
+    items: [
+      { id: 'poi-3', partCode: 'ROT-15W40', description: 'Aceite Mineral Shell Rotella 15W-40 (Cubetas 19L)', quantity: 20, unitCost: 1850, total: 37000 }
+    ],
+    subtotal: 37000,
+    taxIva: 5920,
+    total: 42920,
+    notes: 'Solicitud urgente por agotamiento de tambores de servicio.',
+    sentAt: '2026-08-18 09:15'
+  }
+];
+
+// 7. CONTACTOS (DIRECTORIO DE CLIENTES Y PROVEEDORES)
+export const INITIAL_CLIENT_CONTACTS: ClientContact[] = [
+  {
+    id: 'cli-1',
+    name: 'Transportes Logísticos del Norte S.A. de C.V.',
+    commercialName: 'TLN Logistics',
+    rfc: 'TLN1402219X3',
+    regimenFiscal: '601 - General de Ley Personas Morales',
+    usoCfdi: 'G03 - Gastos en general',
+    email: 'facturacion@logisticanorte.com.mx',
+    phone: '+52 81 1892 4029',
+    address: 'Blvd. García Morales Km 6.5, Hermosillo, Sonora',
+    creditDays: 30,
+    creditLimit: 250000,
+    totalOrdersCount: 14,
+    createdAt: '2025-01-10',
+    vehicles: [
+      { plates: 'ABC-1234', brand: 'Kenworth', model: 'T680', year: '2021', vin: '1XKDDB9X1MD829103', engine: 'Cummins ISX15' },
+      { plates: 'SON-4091', brand: 'Kenworth', model: 'T660', year: '2018', vin: '2XKDDB8X9KD491823', engine: 'Cummins ISX' }
+    ]
+  },
+  {
+    id: 'cli-2',
+    name: 'Fletes y Enlaces del Pacífico S.A.',
+    commercialName: 'FEP Express',
+    rfc: 'FEP091103KA1',
+    regimenFiscal: '601 - General de Ley Personas Morales',
+    usoCfdi: 'G03 - Gastos en general',
+    email: 'admon@fletespacifico.com',
+    phone: '+52 662 214 8890',
+    address: 'Parque Industrial Dynatech, Hermosillo, Sonora',
+    creditDays: 15,
+    creditLimit: 150000,
+    totalOrdersCount: 8,
+    createdAt: '2025-03-22',
+    vehicles: [
+      { plates: 'XYZ-9876', brand: 'Freightliner', model: 'Cascadia', year: '2020', vin: '3AKJHHDR8LS901234', engine: 'Detroit DD15' }
+    ]
+  },
+  {
+    id: 'cli-3',
+    name: 'Cargas Rápidas de Sonora',
+    commercialName: 'GRR Transport',
+    rfc: 'CRS180514P90',
+    regimenFiscal: '612 - Personas Físicas con Actividades Empresariales',
+    usoCfdi: 'G03 - Gastos en general',
+    email: 'operaciones@cargasgrr.com',
+    phone: '+52 662 312 9011',
+    address: 'Carretera a Sahuaripa Km 3.2, Hermosillo, Sonora',
+    creditDays: 0,
+    creditLimit: 0,
+    totalOrdersCount: 5,
+    createdAt: '2025-06-15',
+    vehicles: [
+      { plates: 'SON-7712', brand: 'International', model: 'ProStar', year: '2019', vin: '3HSCAPR64KN890123', engine: 'Navistar N13' }
+    ]
+  }
+];
+
+export const INITIAL_SUPPLIER_CONTACTS: SupplierContact[] = [
+  {
+    id: 'prov-1',
+    companyName: 'Distribuidora Diésel del Noroeste S.A. de C.V.',
+    contactPerson: 'Lic. Roberto Valenzuela',
+    rfc: 'DDN040912HA1',
+    email: 'ventas@dieselnoroeste.mx',
+    phone: '+52 662 289 9000',
+    address: 'Blvd. Kino #401, Hermosillo, Sonora',
+    category: 'Refacciones Diésel',
+    creditDays: 30,
+    bankName: 'BBVA Bancomer',
+    bankAccountClabe: '012760001928374651',
+    suppliesList: ['Filtros Donaldson', 'Fleetguard', 'Inyectores Bosch', 'Turbos Holset']
+  },
+  {
+    id: 'prov-2',
+    companyName: 'Lubricantes y Químicos Industriales S.A.',
+    contactPerson: 'Ing. Sandra Mendoza',
+    rfc: 'LQI110823KJ9',
+    email: 'pedidos@lubriq.com.mx',
+    phone: '+52 662 254 3321',
+    address: 'Calle de los Pinos 88, Zona Industrial, Hermosillo',
+    category: 'Aceites y Lubricantes',
+    creditDays: 21,
+    bankName: 'Banorte',
+    bankAccountClabe: '072760009182736452',
+    suppliesList: ['Shell Rotella 15W40', 'Mobil Delvac', 'Fluido DEF Urea', 'Anticongelante ELC']
+  },
+  {
+    id: 'prov-3',
+    companyName: 'Metrología y Herramientas Especiales del Norte',
+    contactPerson: 'Ing. Carlos Peralta',
+    rfc: 'MHN190302KL8',
+    email: 'contacto@herramientasnorte.com',
+    phone: '+52 81 8390 1200',
+    address: 'Av. Gonzalitos 1200, Monterrey, NL',
+    category: 'Herramientas',
+    creditDays: 15,
+    bankName: 'Santander',
+    bankAccountClabe: '014760004819203948',
+    suppliesList: ['Scanners Cummins Inline', 'Torquímetros Snap-On', 'Prensas Hidráulicas OTC']
+  }
+];
+
+// 8. BANCOS Y FINANZAS
+export const INITIAL_BANK_ACCOUNTS: BankAccount[] = [
+  {
+    id: 'bank-1',
+    name: 'BBVA Bancomer Cuenta Maestra Operativa',
+    bankName: 'BBVA Bancomer',
+    type: 'Banco',
+    accountNumber: '0114920194',
+    clabe: '012760001149201948',
+    currency: 'MXN',
+    currentBalance: 485900.50
+  },
+  {
+    id: 'bank-2',
+    name: 'Banorte Cuenta Fiscal Cobranza',
+    bankName: 'Banorte',
+    type: 'Banco',
+    accountNumber: '0892019382',
+    clabe: '072760008920193821',
+    currency: 'MXN',
+    currentBalance: 298400.00
+  },
+  {
+    id: 'bank-3',
+    name: 'Caja Principal de Efectivo (Mostrador y Taller)',
+    bankName: 'Caja Física Taller',
+    type: 'Caja Efectivo',
+    accountNumber: 'CAJA-EFECTIVO-01',
+    currency: 'MXN',
+    currentBalance: 18450.00
+  }
+];
+
+export const INITIAL_FINANCIAL_MOVEMENTS: FinancialMovement[] = [
+  {
+    id: 'mov-1',
+    accountId: 'bank-1',
+    accountName: 'BBVA Bancomer Cuenta Maestra Operativa',
+    type: 'Ingreso',
+    concept: 'Pago Transferencia OS-9283 Transportes Logísticos',
+    category: 'Cobro Taller',
+    amount: 42572.00,
+    date: '2026-08-05 16:30',
+    reference: 'SPEI-8891024',
+    relatedOrderId: 'OS-9283'
+  },
+  {
+    id: 'mov-2',
+    accountId: 'bank-3',
+    accountName: 'Caja Principal de Efectivo (Mostrador y Taller)',
+    type: 'Ingreso',
+    concept: 'Venta mostrador Mostrador TICK-901 Flotilla Express',
+    category: 'Cobro Mostrador',
+    amount: 3410.40,
+    date: '2026-08-05 09:45',
+    reference: 'EFECTIVO-CAJA',
+    relatedOrderId: 'TICK-901'
+  },
+  {
+    id: 'mov-3',
+    accountId: 'bank-1',
+    accountName: 'BBVA Bancomer Cuenta Maestra Operativa',
+    type: 'Egreso',
+    concept: 'Pago OC-8021 Distribuidora Diésel del Noroeste',
+    category: 'Compra Refacciones',
+    amount: 22214.00,
+    date: '2026-08-17 14:45',
+    reference: 'SPEI-1928301',
+    relatedPurchaseId: 'OC-8021'
+  },
+  {
+    id: 'mov-4',
+    accountId: 'bank-3',
+    accountName: 'Caja Principal de Efectivo (Mostrador y Taller)',
+    type: 'Egreso',
+    concept: 'Compra urgente de abrazaderas de presión de turbos',
+    category: 'Compra Refacciones',
+    amount: 850.00,
+    date: '2026-08-05 08:30',
+    reference: 'FAC-8891'
   }
 ];

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useWorkshop } from '../../context/WorkshopContext';
 import { InventoryItem, POSReceipt } from '../../types';
+import { HerramientasModule } from '../modules/HerramientasModule';
+import { ComprasModule } from '../modules/ComprasModule';
+import { ContactosModule } from '../modules/ContactosModule';
 import { 
   Boxes, 
   ShoppingCart, 
@@ -459,6 +462,21 @@ export const AlmacenView: React.FC<AlmacenViewProps> = ({ activeTab }) => {
             )}
           </div>
         </div>
+      )}
+
+      {/* MODULE: CONTROL Y PRÉSTAMO DE HERRAMIENTAS */}
+      {activeTab === 'herramientas' && (
+        <HerramientasModule />
+      )}
+
+      {/* MODULE: ÓRDENES DE COMPRA Y REABASTECIMIENTO */}
+      {activeTab === 'compras' && (
+        <ComprasModule />
+      )}
+
+      {/* MODULE: DIRECTORIO DE PROVEEDORES */}
+      {activeTab === 'proveedores' && (
+        <ContactosModule initialTab="proveedores" />
       )}
 
       {/* MODULE 3: SURTIDO A TALLER */}

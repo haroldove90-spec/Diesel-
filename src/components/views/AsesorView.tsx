@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useWorkshop } from '../../context/WorkshopContext';
 import { WorkOrderModule } from './WorkOrderModule';
+import { CitasModule } from '../modules/CitasModule';
+import { FacturacionCajaModule } from '../modules/FacturacionCajaModule';
+import { ContactosModule } from '../modules/ContactosModule';
 import { ServiceOrder } from '../../types';
 import { 
   Truck, 
@@ -665,6 +668,21 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
             </div>
           )}
         </div>
+      )}
+
+      {/* MODULE: GESTIÓN DE CITAS */}
+      {activeTab === 'citas' && (
+        <CitasModule isExternalMode={false} />
+      )}
+
+      {/* MODULE: FACTURACIÓN Y CAJA */}
+      {activeTab === 'facturacion' && (
+        <FacturacionCajaModule />
+      )}
+
+      {/* MODULE: DIRECTORIO DE CLIENTES */}
+      {activeTab === 'contactos' && (
+        <ContactosModule initialTab="clientes" />
       )}
 
       {/* MODULE: ORDEN DE TRABAJO */}

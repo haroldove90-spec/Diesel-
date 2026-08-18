@@ -157,10 +157,12 @@ export interface InventoryItem {
   code: string;
   name: string;
   category: string;
+  subcategory?: string;
   brand: string;
   costPrice: number;
   salePrice: number;
   engineApplications: string;
+  equivalences?: string[]; // Cross-reference / Cruce de aplicaciones (Cummins, Donaldson, Fleetguard, etc.)
   stock: number;
   minStock: number;
   unit: string;
@@ -176,6 +178,199 @@ export interface StockMovement {
   quantity: number;
   reference: string;
   user: string;
+}
+
+// 1. GESTIÓN DE CITAS
+export interface Appointment {
+  id: string;
+  clientName: string;
+  clientPhone: string;
+  clientEmail: string;
+  vehiclePlates: string;
+  vehicleBrandModel: string;
+  vehicleYear: string;
+  preferredDate: string;
+  preferredTime: string;
+  serviceType: 'Preventivo' | 'Correctivo' | 'Diagnóstico' | 'Garantía';
+  serviceReason: string;
+  status: 'Pendiente' | 'Confirmada' | 'Convertida' | 'Cancelada';
+  source: 'Portal Web Cliente' | 'Asesor Interno';
+  bayAssigned?: string;
+  convertedOrderId?: string;
+  createdAt: string;
+}
+
+// 3. FACTURACIÓN Y CAJA (ÓRDENES DE COBRO Y COMPROBANTES)
+export type ChargeSourceType = 'Mostrador' | 'Taller';
+
+export interface BillingOrder {
+  id: string; // e.g. "COB-1092"
+  sourceType: ChargeSourceType;
+  referenceId: string; // e.g. "OS-9283" or "TICKET-8291"
+  clientName: string;
+  clientRfc?: string;
+  clientEmail?: string;
+  subtotal: number;
+  taxIva: number;
+  total: number;
+  status: 'Pendiente de Pago' | 'Pagado' | 'Facturado';
+  paymentMethod?: 'Efectivo' | 'Tarjeta' | 'Transferencia';
+  paidAt?: string;
+  dispatchedInWarehouse: boolean; // Vale de entrega para ventanilla
+  warehouseVoucherNumber?: string;
+  invoiceId?: string;
+  createdAt: string;
+  itemsSummary: string;
+}
+
+export interface InvoiceRecord {
+  id: string;
+  folio: string; // e.g. "FAC-4019"
+  uuid: string; // SAT UUID
+  orderReferenceId: string;
+  clientName: string;
+  rfc: string;
+  regimenFiscal: string;
+  usoCfdi: string;
+  email: string;
+  subtotal: number;
+  taxIva: number;
+  total: number;
+  paymentMethod: 'Efectivo' | 'Tarjeta' | 'Transferencia';
+  paymentForm: '01 - Efectivo' | '03 - Transferencia electrónica' | '04 - Tarjeta de crédito' | '28 - Tarjeta de débito';
+  date: string;
+  xmlData: string;
+  sentByEmail: boolean;
+  emailSentAt?: string;
+}
+
+// 5. CONTROL INTERNO DE HERRAMIENTA
+export interface ToolItem {
+  id: string;
+  code: string; // e.g. "HRR-ESC-01"
+  name: string;
+  brand: string;
+  serialNumber: string;
+  category: 'Diagnóstico Electrónico' | 'Extractor / Prensa' | 'Torque / Medición' | 'Neumática / Taller' | 'Especial Diésel';
+  status: 'Disponible' | 'Asignada' | 'Mantenimiento';
+  currentTechnicianId?: string;
+  currentTechnicianName?: string;
+  assignedDate?: string;
+  condition: 'Excelente' | 'Bueno' | 'Regular';
+  notes?: string;
+}
+
+export interface ToolAssignmentLog {
+  id: string;
+  toolId: string;
+  toolCode: string;
+  toolName: string;
+  technicianId: string;
+  technicianName: string;
+  assignedDate: string;
+  returnDate?: string;
+  status: 'Activa' | 'Devuelta';
+  responsibilitySigned: boolean;
+  returnCondition?: 'Excelente' | 'Bueno' | 'Regular' | 'Dañada';
+  observations?: string;
+}
+
+// 6. COMPRAS Y PROVEEDORES
+export interface PurchaseOrderItem {
+  id: string;
+  partCode: string;
+  description: string;
+  quantity: number;
+  unitCost: number;
+  total: number;
+}
+
+export interface PurchaseOrder {
+  id: string; // e.g. "OC-8021"
+  supplierId: string;
+  supplierName: string;
+  supplierEmail: string;
+  date: string;
+  status: 'Borrador' | 'Enviada a Proveedor' | 'Recibida en Almacén' | 'Cancelada';
+  isDirectExpense: boolean;
+  expenseCategory: 'Refacciones Almacén' | 'Herramientas' | 'Consumibles Taller' | 'Gasto Operativo / Administrativo';
+  paymentMethod: 'Transferencia' | 'Efectivo' | 'Crédito Proveedor';
+  bankAccountId?: string;
+  items: PurchaseOrderItem[];
+  subtotal: number;
+  taxIva: number;
+  total: number;
+  notes?: string;
+  sentAt?: string;
+  receivedAt?: string;
+}
+
+// 7. CONTACTOS (DIRECTORIO DE CLIENTES Y PROVEEDORES)
+export interface ClientContactVehicle {
+  plates: string;
+  brand: string;
+  model: string;
+  year: string;
+  vin: string;
+  engine: string;
+}
+
+export interface ClientContact {
+  id: string;
+  name: string;
+  commercialName?: string;
+  rfc: string;
+  regimenFiscal: string;
+  usoCfdi: string;
+  email: string;
+  phone: string;
+  address: string;
+  vehicles: ClientContactVehicle[];
+  creditDays?: number;
+  creditLimit?: number;
+  totalOrdersCount: number;
+  createdAt: string;
+}
+
+export interface SupplierContact {
+  id: string;
+  companyName: string;
+  contactPerson: string;
+  rfc: string;
+  email: string;
+  phone: string;
+  address: string;
+  category: 'Refacciones Diésel' | 'Aceites y Lubricantes' | 'Filtros' | 'Herramientas' | 'Servicios Externos';
+  creditDays: number;
+  bankName?: string;
+  bankAccountClabe?: string;
+  suppliesList: string[];
+}
+
+// 8. BANCOS Y FINANZAS
+export interface BankAccount {
+  id: string;
+  name: string; // e.g. "BBVA Bancomer Corporativa 4912"
+  type: 'Banco' | 'Caja Efectivo';
+  accountNumber: string;
+  clabe?: string;
+  currency: 'MXN';
+  currentBalance: number;
+  bankName: string;
+}
+
+export interface FinancialMovement {
+  id: string;
+  accountId: string;
+  accountName: string;
+  type: 'Ingreso' | 'Egreso';
+  concept: string;
+  category: 'Cobro Taller' | 'Cobro Mostrador' | 'Compra Refacciones' | 'Herramientas' | 'Nómina / Taller' | 'Gasto Operativo';
+  amount: number;
+  date: string;
+  reference?: string;
+  relatedOrderId?: string;
+  relatedPurchaseId?: string;
 }
 
 export interface POSCartItem {

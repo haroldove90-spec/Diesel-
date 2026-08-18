@@ -14,7 +14,12 @@ import {
   ShoppingCart, 
   SendToBack,
   Eye,
-  ClipboardCheck
+  ClipboardCheck,
+  Calendar,
+  Receipt,
+  ShoppingBag,
+  Building2,
+  TrendingUp
 } from 'lucide-react';
 
 export interface ModuleItem {
@@ -26,29 +31,40 @@ export interface ModuleItem {
 export const ROLE_MODULES: Record<RoleType, ModuleItem[]> = {
   direccion: [
     { id: 'dashboard', name: 'Dashboard Gerencial', icon: BarChart3 },
-    { id: 'finanzas', name: 'Finanzas y Cajas', icon: Wallet },
+    { id: 'reportes', name: 'Ventas y Reportes', icon: TrendingUp },
+    { id: 'finanzas', name: 'Bancos y Finanzas', icon: Wallet },
+    { id: 'compras', name: 'Compras y Proveedores', icon: ShoppingBag },
+    { id: 'contactos', name: 'Clientes y Flotas', icon: Building2 },
     { id: 'usuarios', name: 'Usuarios y Permisos', icon: Users },
     { id: 'ordentrabajo', name: 'Orden de Trabajo', icon: ClipboardCheck }
   ],
   asesor: [
+    { id: 'citas', name: 'Gestión de Citas', icon: Calendar },
     { id: 'recepcion', name: 'Recepción e Ingreso', icon: Truck },
     { id: 'cotizaciones', name: 'Presupuestos y Links', icon: FileText },
     { id: 'ordentrabajo', name: 'Orden de Trabajo', icon: ClipboardCheck },
+    { id: 'facturacion', name: 'Facturación y Caja', icon: Receipt },
+    { id: 'contactos', name: 'Directorio Clientes', icon: Users },
     { id: 'entrega', name: 'Entrega y Cierre', icon: CheckCircle2 }
   ],
   tecnico: [
     { id: 'panel', name: 'Panel de Taller', icon: Wrench },
     { id: 'ordentrabajo', name: 'Orden de Trabajo', icon: ClipboardCheck },
     { id: 'evidencia', name: 'Evidencia Digital', icon: Camera },
-    { id: 'solicitud', name: 'Solicitud de Refacciones', icon: PackagePlus }
+    { id: 'solicitud', name: 'Solicitud Refacciones', icon: PackagePlus },
+    { id: 'herramientas', name: 'Mis Herramientas', icon: Wrench }
   ],
   almacen: [
     { id: 'inventario', name: 'Inventario y Kardex', icon: Boxes },
+    { id: 'herramientas', name: 'Control Herramientas', icon: Wrench },
+    { id: 'compras', name: 'Órdenes de Compra', icon: ShoppingBag },
     { id: 'pos', name: 'Punto de Venta', icon: ShoppingCart },
-    { id: 'surtido', name: 'Surtido a Taller', icon: SendToBack }
+    { id: 'surtido', name: 'Surtido a Taller', icon: SendToBack },
+    { id: 'proveedores', name: 'Proveedores', icon: Building2 }
   ],
   cliente: [
-    { id: 'seguimiento', name: 'Seguimiento de Orden', icon: Eye }
+    { id: 'seguimiento', name: 'Seguimiento de Orden', icon: Eye },
+    { id: 'agendar', name: 'Agendar Cita en Línea', icon: Calendar }
   ]
 };
 
