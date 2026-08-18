@@ -243,7 +243,7 @@ export const ContactosModule: React.FC<ContactosModuleProps> = ({ initialTab = '
         {activeTab === 'clientes' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {filteredClients.map((client) => {
-              const clientOrders = orders.filter(o => o.client.name.toLowerCase().includes(client.name.toLowerCase()));
+              const clientOrders = orders.filter(o => o.vehicle?.clientName?.toLowerCase().includes(client.name.toLowerCase()));
 
               return (
                 <div 
