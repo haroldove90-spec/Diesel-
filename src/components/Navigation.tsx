@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { RoleType } from '../types';
 import { 
   BarChart3, 
@@ -76,6 +76,17 @@ interface NavigationProps {
 
 export const Navigation: React.FC<NavigationProps> = ({ role, activeTab, setActiveTab }) => {
   const modules = ROLE_MODULES[role] || [];
+  const navContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll active item into view on mobile
+  useEffect(() => {
+    if (navContainerRef.current) {
+      const activeEl = navContainerRef.current.querySelector<HTMLButtonElement>(`[data-tab-id="${activeTab}"]`);
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [activeTab]);
 
   return (
     <>
@@ -108,24 +119,34 @@ export const Navigation: React.FC<NavigationProps> = ({ role, activeTab, setActi
         </div>
       </aside>
 
-      {/* Mobile & Tablet Bottom Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200 flex items-center justify-around z-30 px-2 shadow-lg">
-        {modules.map((mod) => {
-          const Icon = mod.icon;
-          const isActive = activeTab === mod.id;
-          return (
-            <button
-              key={mod.id}
-              onClick={() => setActiveTab(mod.id)}
-              className={`flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-bold transition-colors ${
-                isActive ? 'text-[#002855] font-extrabold' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Icon className={`w-5 h-5 mb-1 ${isActive ? 'text-[#002855]' : 'text-slate-400'}`} />
-              <span className="truncate max-w-[80px]">{mod.name}</span>
-            </button>
-          );
-        })}
+      {/* Mobile & Tablet Bottom Navigation Bar with Horizontal Smooth Scroll */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200 z-40 shadow-xl">
+        <div 
+          ref={navContainerRef}
+          className="flex items-center h-full px-2 gap-1.5 overflow-x-auto scroll-smooth overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {modules.map((mod) => {
+            const Icon = mod.icon;
+            const isActive = activeTab === mod.id;
+            return (
+              <button
+                key={mod.id}
+                data-tab-id={mod.id}
+                onClick={() => setActiveTab(mod.id)}
+                className={`flex flex-col items-center justify-center shrink-0 min-w-[78px] px-2 py-1.5 rounded-xl transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-blue-50 text-[#002855] font-extrabold border border-blue-200/80 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <Icon className={`w-4 h-4 mb-1 shrink-0 ${isActive ? 'text-blue-700 stroke-[2.5]' : 'text-slate-400'}`} />
+                <span className="text-[10px] whitespace-nowrap leading-tight tracking-tight">
+                  {mod.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
     </>
   );
