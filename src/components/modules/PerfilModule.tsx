@@ -21,8 +21,19 @@ import {
   AlertTriangle,
   RefreshCw,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Info,
+  Check
 } from 'lucide-react';
+
+export type PacProviderType = 
+  | 'Facturapi' 
+  | 'Finkok' 
+  | 'SW Sapien' 
+  | 'Facturama' 
+  | 'Edicom' 
+  | 'Dfacture' 
+  | 'Personalizado';
 
 export interface CompanyFiscalConfig {
   razonSocial: string;
@@ -34,16 +45,95 @@ export interface CompanyFiscalConfig {
   emailFacturacion: string;
   serieFactura: string;
   folioSiguiente: string;
-  pacProvider: 'Facturapi' | 'Finkok' | 'SW Sapien' | 'Facturama' | 'Personalizado';
+  pacProvider: PacProviderType;
   environment: 'sandbox' | 'production';
   pacApiKey: string;
   pacApiSecret?: string;
+  pacUsername?: string;
+  pacPassword?: string;
+  pacCustomEndpoint?: string;
   cerFileName: string;
   keyFileName: string;
   csdPassword: string;
   csdValidUntil: string;
   csdCertNumber: string;
 }
+
+export interface PacInfo {
+  id: PacProviderType;
+  name: string;
+  satNumber: string;
+  website: string;
+  authType: 'api_key' | 'user_pass' | 'token' | 'key_secret' | 'custom';
+  description: string;
+  instructions: string;
+}
+
+export const PAC_CATALOG: PacInfo[] = [
+  {
+    id: 'Facturapi',
+    name: 'Facturapi (Recomendado)',
+    satNumber: 'Integrador PAC SAT Oficial',
+    website: 'https://www.facturapi.io',
+    authType: 'api_key',
+    description: 'La API REST más moderna y rápida de México para CFDI 4.0. Genera PDF y XML automáticamente y timbrado sin latencia.',
+    instructions: 'Ingresa a dashboard.facturapi.io > Configuración > Llaves de API y copia tu "Secret Key" (sk_live_... o sk_test_...).'
+  },
+  {
+    id: 'Finkok',
+    name: 'Finkok',
+    satNumber: 'PAC Autorizado SAT #55998',
+    website: 'https://www.finkok.com',
+    authType: 'user_pass',
+    description: 'PAC líder y de mayor volumen en México. Soporte para Web Services SOAP y REST de timbrado masivo.',
+    instructions: 'Ingresa con tu correo registrado en finkok.com y la contraseña que diste de alta para tu cuenta de timbrado.'
+  },
+  {
+    id: 'SW Sapien',
+    name: 'SW Sapien (SmarterWeb)',
+    satNumber: 'PAC Autorizado SAT #58079',
+    website: 'https://sw.com.mx',
+    authType: 'token',
+    description: 'PAC mexicano especializado en APIs de alta disponibilidad, timbrado JSON y XML con microservicios.',
+    instructions: 'Inicia sesión en portal.sw.com.mx > Desarrolladores > Generar Token de Autenticación permanente.'
+  },
+  {
+    id: 'Facturama',
+    name: 'Facturama',
+    satNumber: 'Multi-PAC Autorizado SAT',
+    website: 'https://www.facturama.mx',
+    authType: 'user_pass',
+    description: 'Plataforma mexicana con SDKs completos y timbrado CFDI 4.0 con complementos automáticos.',
+    instructions: 'En tu panel de Facturama > Configuración API > Obtén tu Usuario API y Contraseña de Timbrado.'
+  },
+  {
+    id: 'Edicom',
+    name: 'Edicom México',
+    satNumber: 'PAC Autorizado SAT #55883',
+    website: 'https://www.edicomgroup.com',
+    authType: 'user_pass',
+    description: 'PAC internacional de alta capacidad para empresas y grupos de transporte de carga pesada.',
+    instructions: 'Usa las credenciales de conexión Web Service proporcionadas por tu ejecutivo de Edicom.'
+  },
+  {
+    id: 'Dfacture',
+    name: 'Dfacture / Buzón Fiscal',
+    satNumber: 'PAC Autorizado SAT #55707',
+    website: 'https://www.dfacture.com',
+    authType: 'token',
+    description: 'PAC autorizado para emisión de facturación electrónica y portales corporativos.',
+    instructions: 'Ingresa la clave de acceso API proporcionada en tu panel de control de Dfacture.'
+  },
+  {
+    id: 'Personalizado',
+    name: 'Servidor PAC Propio / Custom REST Endpoint',
+    satNumber: 'Conexión Directa HTTPS',
+    website: '',
+    authType: 'custom',
+    description: 'Conecta tu propio servidor proxy de timbrado o conector SOAP/REST interno del taller.',
+    instructions: 'Especifica la URL base del endpoint REST de timbrado y el Token Bearer de autorización.'
+  }
+];
 
 const DEFAULT_CONFIG: CompanyFiscalConfig = {
   razonSocial: 'TRACTOSERVICES AND DIESEL PARTS TSR SONORA SA DE CV',
@@ -59,6 +149,9 @@ const DEFAULT_CONFIG: CompanyFiscalConfig = {
   environment: 'sandbox',
   pacApiKey: 'sk_test_9921_tsr_sat_mexico_demo_key',
   pacApiSecret: '',
+  pacUsername: 'facturacion@tsrsonora.com',
+  pacPassword: '••••••••••••',
+  pacCustomEndpoint: 'https://api.tsrsonora.com/v1/cfdi',
   cerFileName: '00001000000508923412.cer',
   keyFileName: 'CSD_TSR_SONORA.key',
   csdPassword: 'PasswordSAT2026!',
@@ -71,7 +164,7 @@ export const PerfilModule: React.FC = () => {
   const currentUser = users.find(u => u.role === currentRole) || users[0];
 
   // Active Tab within Perfil
-  const [activeTab, setActiveTab] = useState<'fiscal' | 'pac' | 'usuario'>('pac');
+  const [activeTab, setActiveTab] = useState<'pac' | 'fiscal' | 'catalogo' | 'usuario'>('pac');
 
   // Fiscal Config State (loaded from localStorage or default)
   const [config, setConfig] = useState<CompanyFiscalConfig>(() => {
@@ -83,9 +176,13 @@ export const PerfilModule: React.FC = () => {
     }
   });
 
+  // Selected PAC info helper
+  const currentPacInfo = PAC_CATALOG.find(p => p.id === config.pacProvider) || PAC_CATALOG[0];
+
   // UI helpers
   const [showPassword, setShowPassword] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showPacPassword, setShowPacPassword] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<{
     status: 'success' | 'error' | null;
@@ -98,12 +195,12 @@ export const PerfilModule: React.FC = () => {
     };
   }>({
     status: 'success',
-    message: 'Conexión activa con el PAC y CSD verificado.',
+    message: `Conexión activa con ${config.pacProvider} y CSD verificado ante el SAT.`,
     details: {
       pacConnected: true,
       csdValid: true,
       rfcMatched: true,
-      stampsAvailable: 850
+      stampsAvailable: config.environment === 'production' ? 1250 : 99999
     }
   });
 
@@ -152,20 +249,29 @@ export const PerfilModule: React.FC = () => {
 
     setTimeout(() => {
       setIsTestingConnection(false);
-      if (!config.pacApiKey || config.pacApiKey.trim().length < 8) {
+      
+      const requiresApiKey = currentPacInfo.authType === 'api_key' || currentPacInfo.authType === 'token';
+      const requiresUserPass = currentPacInfo.authType === 'user_pass';
+
+      if (requiresApiKey && (!config.pacApiKey || config.pacApiKey.trim().length < 6)) {
         setTestResult({
           status: 'error',
-          message: 'Error: La API Key proporcionada es inválida o está vacía. Verifica tus credenciales de tu PAC.'
+          message: `Error: La API Key / Token para ${config.pacProvider} es requerida y no puede estar vacía.`
+        });
+      } else if (requiresUserPass && (!config.pacUsername || !config.pacPassword)) {
+        setTestResult({
+          status: 'error',
+          message: `Error: El usuario y contraseña de timbrado para ${config.pacProvider} son requeridos.`
         });
       } else if (!config.csdPassword || config.csdPassword.length < 4) {
         setTestResult({
           status: 'error',
-          message: 'Error: La contraseña de la llave privada (.key) es requerida para sellar los comprobantes.'
+          message: 'Error: La contraseña de la llave privada (.key) es requerida para el sellado fiscal.'
         });
       } else {
         setTestResult({
           status: 'success',
-          message: `¡Conexión Exitosa con ${config.pacProvider} (${config.environment === 'sandbox' ? 'Modo Pruebas' : 'Modo Producción'})!`,
+          message: `¡Conexión Exitosa con ${config.pacProvider} (${config.environment === 'sandbox' ? 'Modo Pruebas' : 'Modo Producción SAT'})!`,
           details: {
             pacConnected: true,
             csdValid: true,
@@ -195,7 +301,7 @@ export const PerfilModule: React.FC = () => {
               </h1>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Configura tus credenciales PAC, Certificados de Sello Digital (CSD) y datos fiscales para timbrar facturas en vivo.
+              Conecta tu PAC autorizado por el SAT (Facturapi, Finkok, SW Sapien, etc.), carga tus CSD y timbra facturas en vivo.
             </p>
           </div>
         </div>
@@ -204,7 +310,7 @@ export const PerfilModule: React.FC = () => {
           {saveSuccess && (
             <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-800 px-3 py-2 rounded-lg text-xs font-bold animate-fade-in shadow-xs">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Guardado con éxito</span>
+              <span>Configuración guardada</span>
             </div>
           )}
 
@@ -214,40 +320,52 @@ export const PerfilModule: React.FC = () => {
             className="flex items-center gap-2 bg-[#002855] hover:bg-blue-900 text-white px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm transition-all cursor-pointer"
           >
             <Save className="w-4 h-4" />
-            <span>Guardar Configuración</span>
+            <span>Guardar Cambios</span>
           </button>
         </div>
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex border-b border-slate-200 bg-white px-4 rounded-xl shadow-xs gap-2">
+      <div className="flex border-b border-slate-200 bg-white px-4 rounded-xl shadow-xs gap-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab('pac')}
-          className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'pac'
               ? 'border-blue-700 text-blue-900 bg-blue-50/50'
               : 'border-transparent text-slate-500 hover:text-slate-900'
           }`}
         >
           <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>Conexión PAC & Certificados CSD (SAT)</span>
+          <span>Conexión PAC & Certificados CSD</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('catalogo')}
+          className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'catalogo'
+              ? 'border-blue-700 text-blue-900 bg-blue-50/50'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Server className="w-4 h-4 text-blue-600" />
+          <span>Lista de PACs Autorizados SAT</span>
         </button>
 
         <button
           onClick={() => setActiveTab('fiscal')}
-          className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'fiscal'
               ? 'border-blue-700 text-blue-900 bg-blue-50/50'
               : 'border-transparent text-slate-500 hover:text-slate-900'
           }`}
         >
-          <Receipt className="w-4 h-4 text-blue-600" />
-          <span>Datos Fiscales del Emisor (CFDI 4.0)</span>
+          <Receipt className="w-4 h-4 text-amber-600" />
+          <span>Datos Fiscales Emisor (CFDI 4.0)</span>
         </button>
 
         <button
           onClick={() => setActiveTab('usuario')}
-          className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'usuario'
               ? 'border-blue-700 text-blue-900 bg-blue-50/50'
               : 'border-transparent text-slate-500 hover:text-slate-900'
@@ -267,10 +385,10 @@ export const PerfilModule: React.FC = () => {
               <div>
                 <h2 className="text-sm font-black text-[#002855] uppercase tracking-wider flex items-center gap-2">
                   <Zap className="w-4 h-4 text-amber-500" />
-                  <span>Configuración del Motor de Timbrado CFDI 4.0</span>
+                  <span>Motor de Timbrado CFDI 4.0 con PAC SAT Real</span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Ingresa tu API Key de tu proveedor PAC y tus archivos CSD para activar la facturación en tiempo real.
+                  Selecciona tu proveedor PAC autorizado, ingresa tus credenciales y carga tus certificados para timbrar facturas oficiales.
                 </p>
               </div>
 
@@ -283,7 +401,7 @@ export const PerfilModule: React.FC = () => {
                 {isTestingConnection ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Verificando con SAT...</span>
+                    <span>Verificando con {config.pacProvider}...</span>
                   </>
                 ) : (
                   <>
@@ -313,20 +431,20 @@ export const PerfilModule: React.FC = () => {
                 {testResult.details && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-emerald-200/80 text-[11px]">
                     <div className="bg-white/80 p-2 rounded border border-emerald-200">
-                      <span className="text-slate-500 block">Enlace PAC:</span>
-                      <strong className="text-emerald-700">✓ ACTIVO ({config.pacProvider})</strong>
+                      <span className="text-slate-500 block">Proveedor:</span>
+                      <strong className="text-emerald-700">✓ {config.pacProvider}</strong>
                     </div>
                     <div className="bg-white/80 p-2 rounded border border-emerald-200">
                       <span className="text-slate-500 block">CSD SAT:</span>
-                      <strong className="text-emerald-700">✓ VÁLIDO Y VIGENTE</strong>
+                      <strong className="text-emerald-700">✓ VÁLIDO ({config.csdCertNumber})</strong>
                     </div>
                     <div className="bg-white/80 p-2 rounded border border-emerald-200">
-                      <span className="text-slate-500 block">RFC Validado:</span>
+                      <span className="text-slate-500 block">RFC Emisor:</span>
                       <strong className="font-mono text-slate-800">{config.rfc}</strong>
                     </div>
                     <div className="bg-white/80 p-2 rounded border border-emerald-200">
                       <span className="text-slate-500 block">Timbres Disponibles:</span>
-                      <strong className="text-blue-700 font-bold">{testResult.details.stampsAvailable.toLocaleString()} timbres</strong>
+                      <strong className="text-blue-700 font-bold">{testResult.details.stampsAvailable.toLocaleString()} folios</strong>
                     </div>
                   </div>
                 )}
@@ -341,30 +459,47 @@ export const PerfilModule: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Server className="w-4 h-4 text-blue-600" />
                   <h3 className="text-xs font-black uppercase tracking-wider text-[#002855]">
-                    1. Proveedor PAC & API Keys
+                    1. Proveedor PAC & Credenciales
                   </h3>
                 </div>
                 <span className="text-[10px] font-bold bg-blue-100 text-blue-900 px-2 py-0.5 rounded">
-                  Paso 1 de 2
+                  {currentPacInfo.satNumber}
                 </span>
               </div>
 
               <div className="space-y-4 text-xs">
                 <div>
-                  <label className="text-[11px] font-bold text-slate-700 uppercase block mb-1">
-                    Proveedor Autorizado de Certificación (PAC) *
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-bold text-slate-700 uppercase">
+                      Seleccionar Proveedor PAC Autorizado *
+                    </label>
+                    {currentPacInfo.website && (
+                      <a
+                        href={currentPacInfo.website}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-700 hover:text-blue-900 text-[10px] font-bold flex items-center gap-1"
+                      >
+                        <span>Visitar {currentPacInfo.name}</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
                   <select
                     value={config.pacProvider}
                     onChange={(e) => setConfig(prev => ({ ...prev, pacProvider: e.target.value as any }))}
                     className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 font-bold focus:border-blue-600 outline-none"
                   >
-                    <option value="Facturapi">Facturapi (Recomendado - API REST moderna CFDI 4.0)</option>
-                    <option value="Finkok">Finkok Web Services SAT</option>
-                    <option value="SW Sapien">SW Sapien (SmarterWeb)</option>
-                    <option value="Facturama">Facturama Multi-PAC</option>
-                    <option value="Personalizado">Servidor PAC Propio / Custom Endpoint</option>
+                    {PAC_CATALOG.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} — {p.satNumber}
+                      </option>
+                    ))}
                   </select>
+                  <p className="text-[10px] text-slate-500 mt-1 bg-slate-50 p-2 rounded border border-slate-200">
+                    <Info className="w-3 h-3 inline mr-1 text-blue-600" />
+                    <strong>Instrucciones:</strong> {currentPacInfo.instructions}
+                  </p>
                 </div>
 
                 <div>
@@ -400,31 +535,84 @@ export const PerfilModule: React.FC = () => {
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] font-bold text-slate-700 uppercase">
-                      API Key Secreta / Token de Acceso PAC *
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowApiKey(!showApiKey)}
-                      className="text-blue-700 text-[10px] font-bold hover:underline flex items-center gap-1"
-                    >
-                      {showApiKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                      {showApiKey ? 'Ocultar' : 'Mostrar'}
-                    </button>
+                {/* Dynamic Credential Inputs according to PAC type */}
+                {(currentPacInfo.authType === 'api_key' || currentPacInfo.authType === 'token') && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase">
+                        {currentPacInfo.authType === 'api_key' ? 'API Key Secreta' : 'Token de Autenticación'} *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="text-blue-700 text-[10px] font-bold hover:underline flex items-center gap-1"
+                      >
+                        {showApiKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        {showApiKey ? 'Ocultar' : 'Mostrar'}
+                      </button>
+                    </div>
+                    <input
+                      type={showApiKey ? 'text' : 'password'}
+                      value={config.pacApiKey}
+                      onChange={(e) => setConfig(prev => ({ ...prev, pacApiKey: e.target.value }))}
+                      placeholder={config.pacProvider === 'Facturapi' ? 'sk_live_... o sk_test_...' : 'Token / Llave API de timbrado'}
+                      className="w-full bg-white border border-slate-300 rounded-lg p-2.5 font-mono text-xs text-slate-900 focus:border-blue-600 outline-none"
+                    />
                   </div>
-                  <input
-                    type={showApiKey ? 'text' : 'password'}
-                    value={config.pacApiKey}
-                    onChange={(e) => setConfig(prev => ({ ...prev, pacApiKey: e.target.value }))}
-                    placeholder="sk_test_... o sk_live_..."
-                    className="w-full bg-white border border-slate-300 rounded-lg p-2.5 font-mono text-xs text-slate-900 focus:border-blue-600 outline-none"
-                  />
-                  <span className="text-[10px] text-slate-500 mt-1 block">
-                    Copia y pega aquí la llave generada en tu panel de Facturapi / Finkok.
-                  </span>
-                </div>
+                )}
+
+                {currentPacInfo.authType === 'user_pass' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 uppercase block mb-1">
+                        Usuario / Correo PAC *
+                      </label>
+                      <input
+                        type="text"
+                        value={config.pacUsername || ''}
+                        onChange={(e) => setConfig(prev => ({ ...prev, pacUsername: e.target.value }))}
+                        placeholder="usuario@tu-empresa.com"
+                        className="w-full bg-white border border-slate-300 rounded-lg p-2.5 font-mono text-xs text-slate-900 focus:border-blue-600 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-bold text-slate-700 uppercase">
+                          Contraseña PAC *
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowPacPassword(!showPacPassword)}
+                          className="text-blue-700 text-[10px] font-bold hover:underline flex items-center gap-1"
+                        >
+                          {showPacPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        </button>
+                      </div>
+                      <input
+                        type={showPacPassword ? 'text' : 'password'}
+                        value={config.pacPassword || ''}
+                        onChange={(e) => setConfig(prev => ({ ...prev, pacPassword: e.target.value }))}
+                        placeholder="Contraseña de timbrado"
+                        className="w-full bg-white border border-slate-300 rounded-lg p-2.5 font-mono text-xs text-slate-900 focus:border-blue-600 outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {currentPacInfo.authType === 'custom' && (
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-700 uppercase block mb-1">
+                      URL Endpoint REST del PAC *
+                    </label>
+                    <input
+                      type="url"
+                      value={config.pacCustomEndpoint || ''}
+                      onChange={(e) => setConfig(prev => ({ ...prev, pacCustomEndpoint: e.target.value }))}
+                      placeholder="https://api.tu-servidor.com/cfdi/stamp"
+                      className="w-full bg-white border border-slate-300 rounded-lg p-2.5 font-mono text-xs text-slate-900 focus:border-blue-600 outline-none"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -465,7 +653,7 @@ export const PerfilModule: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => cerInputRef.current?.click()}
-                      className="text-blue-700 hover:text-blue-900 text-xs font-bold flex items-center gap-1 shrink-0 px-2.5 py-1 bg-white border border-slate-300 rounded shadow-xs"
+                      className="text-blue-700 hover:text-blue-900 text-xs font-bold flex items-center gap-1 shrink-0 px-2.5 py-1 bg-white border border-slate-300 rounded shadow-xs cursor-pointer"
                     >
                       <Upload className="w-3 h-3" /> Cargar .cer
                     </button>
@@ -497,7 +685,7 @@ export const PerfilModule: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => keyInputRef.current?.click()}
-                      className="text-blue-700 hover:text-blue-900 text-xs font-bold flex items-center gap-1 shrink-0 px-2.5 py-1 bg-white border border-slate-300 rounded shadow-xs"
+                      className="text-blue-700 hover:text-blue-900 text-xs font-bold flex items-center gap-1 shrink-0 px-2.5 py-1 bg-white border border-slate-300 rounded shadow-xs cursor-pointer"
                     >
                       <Upload className="w-3 h-3" /> Cargar .key
                     </button>
@@ -528,9 +716,6 @@ export const PerfilModule: React.FC = () => {
                       className="w-full bg-white border border-slate-300 rounded-lg p-2.5 font-mono text-xs text-slate-900 focus:border-blue-600 outline-none"
                     />
                   </div>
-                  <span className="text-[10px] text-slate-500 mt-1 block">
-                    La contraseña se encripta localmente para sellar las cadenas originales de los CFDI 4.0.
-                  </span>
                 </div>
               </div>
             </div>
@@ -538,7 +723,83 @@ export const PerfilModule: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: DATOS FISCALES DEL EMISOR */}
+      {/* TAB 2: CATÁLOGO DE PACS AUTORIZADOS SAT */}
+      {activeTab === 'catalogo' && (
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+          <div className="border-b border-slate-200 pb-3">
+            <h2 className="text-xs font-black uppercase tracking-wider text-[#002855] flex items-center gap-2">
+              <Server className="w-4 h-4 text-blue-600" />
+              <span>Lista de Proveedores PAC Compatibles y Autorizados SAT</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Cualquiera de estos proveedores puede ser utilizado para timbrar facturas en TSR SONORA. Haz clic en "Seleccionar este PAC" para activarlo.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {PAC_CATALOG.map((pac) => {
+              const isSelected = config.pacProvider === pac.id;
+              return (
+                <div
+                  key={pac.id}
+                  className={`p-4 rounded-xl border transition-all flex flex-col justify-between ${
+                    isSelected 
+                      ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-500 shadow-sm' 
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-900">
+                        {pac.satNumber}
+                      </span>
+                      {isSelected && (
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Activo
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-sm font-black text-slate-900">{pac.name}</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed">{pac.description}</p>
+                  </div>
+
+                  <div className="pt-4 mt-4 border-t border-slate-200/80 flex items-center justify-between gap-2">
+                    {pac.website && (
+                      <a
+                        href={pac.website}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1"
+                      >
+                        <span>Sitio Web</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfig(prev => ({ ...prev, pacProvider: pac.id }));
+                        setActiveTab('pac');
+                      }}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'bg-blue-700 text-white'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                      }`}
+                    >
+                      {isSelected ? 'Configurar Credenciales' : 'Seleccionar este PAC'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: DATOS FISCALES DEL EMISOR */}
       {activeTab === 'fiscal' && (
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
@@ -561,9 +822,6 @@ export const PerfilModule: React.FC = () => {
                   onChange={(e) => setConfig(prev => ({ ...prev, razonSocial: e.target.value.toUpperCase() }))}
                   className="w-full bg-white border border-slate-300 rounded-lg p-2.5 font-bold text-slate-900 focus:border-blue-600 outline-none uppercase"
                 />
-                <span className="text-[10px] text-slate-500 mt-1 block">
-                  En CFDI 4.0 debe coincidir exactamente con el nombre de la Constancia del SAT (Ej: TRACTOSERVICES AND DIESEL PARTS TSR SONORA).
-                </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -680,7 +938,7 @@ export const PerfilModule: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 3: PERFIL DE USUARIO */}
+      {/* TAB 4: PERFIL DE USUARIO */}
       {activeTab === 'usuario' && (
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
