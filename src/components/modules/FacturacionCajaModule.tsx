@@ -386,68 +386,91 @@ export const FacturacionCajaModule: React.FC = () => {
         )}
 
         {/* Tab 2: Facturación CFDI 4.0 */}
-        {activeSubTab === 'facturacion' && (
-          <div className="space-y-4">
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-              <div>
-                <h3 className="text-sm font-bold text-slate-800">Emisor Fiscal Configurado</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  TALLERES DIESEL MASTER DEL NORTE S.A. DE C.V. | RFC: TDM180420AA1 | Régimen: 601 General de Ley
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  Conexión SAT / PAC: Activa (CFDI v4.0)
-                </span>
-              </div>
-            </div>
+        {activeSubTab === 'facturacion' && (() => {
+          let fiscalData = {
+            razonSocial: 'TRACTOSERVICES AND DIESEL PARTS TSR SONORA SA DE CV',
+            rfc: 'TSR180901HD9',
+            regimenFiscal: '601 - General de Ley Personas Morales',
+            pacProvider: 'Facturapi',
+            environment: 'sandbox'
+          };
+          try {
+            const saved = localStorage.getItem('TSR_COMPANY_FISCAL_SETTINGS');
+            if (saved) fiscalData = { ...fiscalData, ...JSON.parse(saved) };
+          } catch {}
 
-            {/* List of Issued Invoices */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
-                <h2 className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                  Historial de Facturas Emitidas ({invoices.length})
-                </h2>
-              </div>
-
-              <div className="divide-y divide-slate-100">
-                {invoices.length === 0 ? (
-                  <div className="p-8 text-center text-slate-400 text-xs font-semibold">
-                    No se han emitido facturas aún. Puedes facturar cualquier orden cobrada desde la pestaña "Caja y Cobro".
+          return (
+            <div className="space-y-4">
+              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-blue-100 text-blue-900 rounded">
+                      Emisor CFDI 4.0 Configurado
+                    </span>
+                    <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${
+                      fiscalData.environment === 'production' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300'
+                    }`}>
+                      {fiscalData.environment === 'production' ? '● SAT Producción Oficial' : '● Modo Sandbox (Pruebas)'}
+                    </span>
                   </div>
-                ) : (
-                  invoices.map((inv) => (
-                    <div key={inv.id} className="p-4 hover:bg-slate-50/80 transition-colors flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-black text-slate-900 bg-blue-50 text-blue-900 px-2 py-0.5 rounded border border-blue-200">
-                            {inv.folio}
-                          </span>
-                          <span className="text-[11px] font-mono text-slate-500">
-                            UUID: {inv.uuid}
-                          </span>
-                          <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full uppercase">
-                            Timbrada SAT
-                          </span>
+                  <h3 className="text-sm font-black text-slate-800 tracking-tight">{fiscalData.razonSocial}</h3>
+                  <p className="text-xs text-slate-500 font-mono">
+                    RFC: <strong className="text-blue-900">{fiscalData.rfc}</strong> • Régimen: {fiscalData.regimenFiscal}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-lg shadow-2xs">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Conexión {fiscalData.pacProvider}: Activa</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* List of Issued Invoices */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-3 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+                  <h2 className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                    Historial de Facturas Emitidas ({invoices.length})
+                  </h2>
+                </div>
+
+                <div className="divide-y divide-slate-100">
+                  {invoices.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400 text-xs font-semibold">
+                      No se han emitido facturas aún. Puedes facturar cualquier orden cobrada desde la pestaña "Caja y Cobro".
+                    </div>
+                  ) : (
+                    invoices.map((inv) => (
+                      <div key={inv.id} className="p-4 hover:bg-slate-50/80 transition-colors flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-black text-slate-900 bg-blue-50 text-blue-900 px-2 py-0.5 rounded border border-blue-200">
+                              {inv.folio}
+                            </span>
+                            <span className="text-[11px] font-mono text-slate-500">
+                              UUID: {inv.uuid}
+                            </span>
+                            <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full uppercase">
+                              Timbrada SAT
+                            </span>
+                          </div>
+
+                          <h4 className="text-sm font-bold text-slate-900">
+                            {inv.clientName} <span className="text-xs font-mono font-normal text-slate-500">({inv.rfc})</span>
+                          </h4>
+
+                          <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3">
+                            <span>Uso CFDI: {inv.usoCfdi}</span>
+                            <span>•</span>
+                            <span>Régimen: {inv.regimenFiscal}</span>
+                            <span>•</span>
+                            <span>Forma: {inv.paymentForm}</span>
+                            <span>•</span>
+                            <span>Fecha: {inv.date}</span>
+                          </div>
                         </div>
 
-                        <h4 className="text-sm font-bold text-slate-900">
-                          {inv.clientName} <span className="text-xs font-mono font-normal text-slate-500">({inv.rfc})</span>
-                        </h4>
-
-                        <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3">
-                          <span>Uso CFDI: {inv.usoCfdi}</span>
-                          <span>•</span>
-                          <span>Régimen: {inv.regimenFiscal}</span>
-                          <span>•</span>
-                          <span>Forma: {inv.paymentForm}</span>
-                          <span>•</span>
-                          <span>Fecha: {inv.date}</span>
-                        </div>
-                      </div>
-
-                      <div className="text-right shrink-0">
+                        <div className="text-right shrink-0">
                         <div className="text-xs text-slate-500">Subtotal: ${inv.subtotal.toLocaleString()} + IVA: ${inv.taxIva.toLocaleString()}</div>
                         <div className="text-base font-black text-slate-900">${inv.total.toLocaleString()} MXN</div>
                       </div>
@@ -499,7 +522,8 @@ export const FacturacionCajaModule: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Tab 3: Vales de Almacén */}
         {activeSubTab === 'vales' && (
