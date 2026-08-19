@@ -13,15 +13,46 @@ import { ClienteView } from './components/views/ClienteView';
 const MainLayout: React.FC = () => {
   const { currentRole } = useWorkshop();
 
-  // Active module tab state
-  const [activeTab, setActiveTab] = useState<string>('');
+  // Active module tab state initialized from localStorage if available
+  const [activeTab, setActiveTabState] = useState<string>(() => {
+    try {
+      if (currentRole) {
+        const savedTab = localStorage.getItem('TSR_ACTIVE_TAB');
+        const modules = ROLE_MODULES[currentRole];
+        if (savedTab && modules && modules.some(m => m.id === savedTab)) {
+          return savedTab;
+        }
+        if (modules && modules.length > 0) {
+          return modules[0].id;
+        }
+      }
+    } catch {}
+    return '';
+  });
 
-  // Whenever role changes, reset active tab to first module of that role
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    try {
+      if (tab) {
+        localStorage.setItem('TSR_ACTIVE_TAB', tab);
+      }
+    } catch {}
+  };
+
+  // Whenever role changes, verify that activeTab belongs to current role
   useEffect(() => {
     if (currentRole) {
       const modules = ROLE_MODULES[currentRole];
       if (modules && modules.length > 0) {
-        setActiveTab(modules[0].id);
+        const savedTab = localStorage.getItem('TSR_ACTIVE_TAB');
+        if (savedTab && modules.some(m => m.id === savedTab)) {
+          setActiveTabState(savedTab);
+        } else {
+          setActiveTabState(modules[0].id);
+          try {
+            localStorage.setItem('TSR_ACTIVE_TAB', modules[0].id);
+          } catch {}
+        }
       }
     }
   }, [currentRole]);

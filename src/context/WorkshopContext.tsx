@@ -127,7 +127,29 @@ interface WorkshopContextType {
 const WorkshopContext = createContext<WorkshopContextType | undefined>(undefined);
 
 export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentRole, setCurrentRole] = useState<RoleType | null>(null);
+  const [currentRole, setCurrentRoleState] = useState<RoleType | null>(() => {
+    try {
+      const saved = localStorage.getItem('TSR_CURRENT_ROLE');
+      const validRoles: RoleType[] = ['direccion', 'contabilidad', 'asesor', 'tecnico', 'almacen', 'cliente'];
+      if (saved && validRoles.includes(saved as RoleType)) {
+        return saved as RoleType;
+      }
+    } catch {}
+    return null;
+  });
+
+  const setCurrentRole = (role: RoleType | null) => {
+    setCurrentRoleState(role);
+    try {
+      if (role) {
+        localStorage.setItem('TSR_CURRENT_ROLE', role);
+      } else {
+        localStorage.removeItem('TSR_CURRENT_ROLE');
+        localStorage.removeItem('TSR_ACTIVE_TAB');
+      }
+    } catch {}
+  };
+
   const [orders, setOrders] = useState<ServiceOrder[]>(INITIAL_ORDERS);
   const [inventory, setInventory] = useState<InventoryItem[]>(INITIAL_INVENTORY);
   const [warehouseRequests, setWarehouseRequests] = useState<WarehouseRequest[]>(INITIAL_WAREHOUSE_REQUESTS);
