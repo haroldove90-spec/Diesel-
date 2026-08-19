@@ -19,7 +19,9 @@ import {
   Receipt,
   ShoppingBag,
   Building2,
-  TrendingUp
+  TrendingUp,
+  Calculator,
+  UserCheck
 } from 'lucide-react';
 
 export interface ModuleItem {
@@ -33,10 +35,20 @@ export const ROLE_MODULES: Record<RoleType, ModuleItem[]> = {
     { id: 'dashboard', name: 'Dashboard Gerencial', icon: BarChart3 },
     { id: 'reportes', name: 'Ventas y Reportes', icon: TrendingUp },
     { id: 'finanzas', name: 'Bancos y Finanzas', icon: Wallet },
-    { id: 'compras', name: 'Compras y Proveedores', icon: ShoppingBag },
+    { id: 'compras', name: 'Órdenes de Compra', icon: ShoppingBag },
+    { id: 'contabilidad', name: 'Contabilidad y Fiscal', icon: Calculator },
+    { id: 'pos', name: 'Punto de Venta', icon: ShoppingCart },
+    { id: 'perfil', name: 'Mi Perfil Fiscal', icon: UserCheck },
     { id: 'contactos', name: 'Clientes y Flotas', icon: Building2 },
     { id: 'usuarios', name: 'Usuarios y Permisos', icon: Users },
     { id: 'ordentrabajo', name: 'Orden de Trabajo', icon: ClipboardCheck }
+  ],
+  contabilidad: [
+    { id: 'facturacion', name: 'Facturación CFDI 4.0', icon: Receipt },
+    { id: 'pos', name: 'Punto de Venta', icon: ShoppingCart },
+    { id: 'perfil', name: 'Mi Perfil y Fiscal', icon: UserCheck },
+    { id: 'bancos', name: 'Bancos y Tesorería', icon: Wallet },
+    { id: 'reportes', name: 'Reportes y Cierres', icon: TrendingUp }
   ],
   asesor: [
     { id: 'citas', name: 'Gestión de Citas', icon: Calendar },
@@ -44,6 +56,7 @@ export const ROLE_MODULES: Record<RoleType, ModuleItem[]> = {
     { id: 'cotizaciones', name: 'Presupuestos y Links', icon: FileText },
     { id: 'ordentrabajo', name: 'Orden de Trabajo', icon: ClipboardCheck },
     { id: 'facturacion', name: 'Facturación y Caja', icon: Receipt },
+    { id: 'pos', name: 'Punto de Venta', icon: ShoppingCart },
     { id: 'contactos', name: 'Directorio Clientes', icon: Users },
     { id: 'entrega', name: 'Entrega y Cierre', icon: CheckCircle2 }
   ],
@@ -51,8 +64,7 @@ export const ROLE_MODULES: Record<RoleType, ModuleItem[]> = {
     { id: 'panel', name: 'Panel de Taller', icon: Wrench },
     { id: 'ordentrabajo', name: 'Orden de Trabajo', icon: ClipboardCheck },
     { id: 'evidencia', name: 'Evidencia Digital', icon: Camera },
-    { id: 'solicitud', name: 'Solicitud Refacciones', icon: PackagePlus },
-    { id: 'herramientas', name: 'Mis Herramientas', icon: Wrench }
+    { id: 'solicitud', name: 'Solicitud Refacciones', icon: PackagePlus }
   ],
   almacen: [
     { id: 'inventario', name: 'Inventario y Kardex', icon: Boxes },

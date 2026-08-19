@@ -1,4 +1,4 @@
-export type RoleType = 'direccion' | 'asesor' | 'tecnico' | 'almacen' | 'cliente';
+export type RoleType = 'direccion' | 'asesor' | 'tecnico' | 'almacen' | 'contabilidad' | 'cliente';
 
 export interface UserRoleInfo {
   id: RoleType;
@@ -291,7 +291,7 @@ export interface PurchaseOrder {
   supplierName: string;
   supplierEmail: string;
   date: string;
-  status: 'Borrador' | 'Enviada a Proveedor' | 'Recibida en Almacén' | 'Cancelada';
+  status: 'Borrador' | 'Pendiente de Autorización' | 'Autorizada' | 'Enviada a Proveedor' | 'Recibida en Almacén' | 'Cancelada';
   isDirectExpense: boolean;
   expenseCategory: 'Refacciones Almacén' | 'Herramientas' | 'Consumibles Taller' | 'Gasto Operativo / Administrativo';
   paymentMethod: 'Transferencia' | 'Efectivo' | 'Crédito Proveedor';
@@ -303,6 +303,9 @@ export interface PurchaseOrder {
   notes?: string;
   sentAt?: string;
   receivedAt?: string;
+  authorizedBy?: string;
+  authorizedAt?: string;
+  createdByRole?: string;
 }
 
 // 7. CONTACTOS (DIRECTORIO DE CLIENTES Y PROVEEDORES)

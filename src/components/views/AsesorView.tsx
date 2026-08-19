@@ -4,6 +4,7 @@ import { WorkOrderModule } from './WorkOrderModule';
 import { CitasModule } from '../modules/CitasModule';
 import { FacturacionCajaModule } from '../modules/FacturacionCajaModule';
 import { ContactosModule } from '../modules/ContactosModule';
+import { PosModule } from '../modules/PosModule';
 import { ServiceOrder } from '../../types';
 import { 
   Truck, 
@@ -678,6 +679,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ activeTab }) => {
       {/* MODULE: FACTURACIÓN Y CAJA */}
       {activeTab === 'facturacion' && (
         <FacturacionCajaModule />
+      )}
+
+      {/* MODULE: PUNTO DE VENTA */}
+      {activeTab === 'pos' && (
+        <PosModule />
       )}
 
       {/* MODULE: DIRECTORIO DE CLIENTES */}

@@ -7,6 +7,7 @@ import { DireccionView } from './components/views/DireccionView';
 import { AsesorView } from './components/views/AsesorView';
 import { TecnicoView } from './components/views/TecnicoView';
 import { AlmacenView } from './components/views/AlmacenView';
+import { ContabilidadView } from './components/views/ContabilidadView';
 import { ClienteView } from './components/views/ClienteView';
 
 const MainLayout: React.FC = () => {
@@ -47,6 +48,7 @@ const MainLayout: React.FC = () => {
         {/* Main Role Content View */}
         <main className="flex-1 flex flex-col min-w-0 bg-slate-50 overflow-hidden">
           {currentRole === 'direccion' && <DireccionView activeTab={activeTab} />}
+          {currentRole === 'contabilidad' && <ContabilidadView activeTab={activeTab} />}
           {currentRole === 'asesor' && <AsesorView activeTab={activeTab} />}
           {currentRole === 'tecnico' && <TecnicoView activeTab={activeTab} />}
           {currentRole === 'almacen' && <AlmacenView activeTab={activeTab} />}

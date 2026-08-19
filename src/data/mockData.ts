@@ -27,6 +27,12 @@ export const ROLES: UserRoleInfo[] = [
     badge: 'Administración'
   },
   {
+    id: 'contabilidad',
+    name: 'Contabilidad y Finanzas',
+    icon: 'Receipt',
+    badge: 'Fiscal & POS'
+  },
+  {
     id: 'asesor',
     name: 'Asesor de Servicio',
     icon: 'ClipboardList',
@@ -387,6 +393,7 @@ export const INITIAL_WAREHOUSE_REQUESTS: WarehouseRequest[] = [
 
 export const INITIAL_USERS: User[] = [
   { id: 'usr-1', name: 'Ing. Fernando Garza', email: 'fgarza@tallerdiesel.com', role: 'direccion', status: 'activo', specialty: 'Administración General' },
+  { id: 'usr-4', name: 'C.P. Laura Méndez', email: 'contabilidad@tallerdiesel.com', role: 'contabilidad', status: 'activo', specialty: 'Contabilidad, Fiscal & SAT' },
   { id: 'usr-2', name: 'Lic. Mariana Treviño', email: 'mtrevino@tallerdiesel.com', role: 'asesor', status: 'activo', specialty: 'Recepción y Atención a Clientes' },
   { id: 'tech-1', name: 'Ricardo M.', email: 'rmartinez@tallerdiesel.com', role: 'tecnico', status: 'activo', specialty: 'Motores Cummins & Detroit' },
   { id: 'tech-2', name: 'Samuel V.', email: 'svazquez@tallerdiesel.com', role: 'tecnico', status: 'activo', specialty: 'Turbos y Sistemas de Emisión' },
@@ -700,6 +707,26 @@ export const INITIAL_PURCHASE_ORDERS: PurchaseOrder[] = [
     total: 42920,
     notes: 'Solicitud urgente por agotamiento de tambores de servicio.',
     sentAt: '2026-08-18 09:15'
+  },
+  {
+    id: 'OC-8023',
+    supplierId: 'prov-1',
+    supplierName: 'Distribuidora Diésel del Noroeste S.A.',
+    supplierEmail: 'ventas@dieselnoroeste.mx',
+    date: '2026-08-19',
+    status: 'Pendiente de Autorización',
+    isDirectExpense: false,
+    expenseCategory: 'Refacciones Almacén',
+    paymentMethod: 'Transferencia',
+    bankAccountId: 'bank-1',
+    items: [
+      { id: 'poi-4', partCode: 'BOS-INJ-4307', description: 'Kit Inyectores Diesel Reman Bosch CR', quantity: 6, unitCost: 4800, total: 28800 }
+    ],
+    subtotal: 28800,
+    taxIva: 4608,
+    total: 33408,
+    notes: 'Requisición generada por Almacén para surtido de orden de trabajo OS-9283.',
+    createdByRole: 'almacen'
   }
 ];
 

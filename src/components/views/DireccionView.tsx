@@ -5,6 +5,10 @@ import { ReportesVentasModule } from '../modules/ReportesVentasModule';
 import { FinanzasBancosModule } from '../modules/FinanzasBancosModule';
 import { ComprasModule } from '../modules/ComprasModule';
 import { ContactosModule } from '../modules/ContactosModule';
+import { FacturacionCajaModule } from '../modules/FacturacionCajaModule';
+import { PosModule } from '../modules/PosModule';
+import { PerfilModule } from '../modules/PerfilModule';
+import { RoleType } from '../../types';
 import { 
   TrendingUp, 
   Wrench, 
@@ -49,7 +53,7 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserRole, setNewUserRole] = useState<'direccion' | 'asesor' | 'tecnico' | 'almacen'>('tecnico');
+  const [newUserRole, setNewUserRole] = useState<RoleType>('tecnico');
   const [newUserSpecialty, setNewUserSpecialty] = useState('');
 
   // Financial calculations
@@ -431,6 +435,7 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
                         <option value="tecnico">Técnico / Mecánico</option>
                         <option value="asesor">Asesor de Servicio</option>
                         <option value="almacen">Encargado Almacén</option>
+                        <option value="contabilidad">Contador / Fiscal</option>
                         <option value="direccion">Dirección</option>
                       </select>
                     </div>
@@ -467,6 +472,21 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
             </div>
           )}
         </div>
+      )}
+
+      {/* MODULE: FACTURACIÓN Y TIMBRADO CFDI 4.0 */}
+      {(activeTab === 'facturacion' || activeTab === 'contabilidad') && (
+        <FacturacionCajaModule />
+      )}
+
+      {/* MODULE: PUNTO DE VENTA */}
+      {activeTab === 'pos' && (
+        <PosModule />
+      )}
+
+      {/* MODULE: MI PERFIL Y DATOS FISCALES */}
+      {activeTab === 'perfil' && (
+        <PerfilModule />
       )}
 
       {/* MODULE 4: ORDEN DE TRABAJO */}

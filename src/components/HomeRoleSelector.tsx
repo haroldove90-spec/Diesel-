@@ -8,7 +8,8 @@ import {
   ClipboardList, 
   Wrench, 
   PackageSearch, 
-  Truck 
+  Truck,
+  Calculator 
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -16,7 +17,8 @@ const iconMap: Record<string, React.ElementType> = {
   ClipboardList,
   Wrench,
   PackageSearch,
-  Truck
+  Truck,
+  Calculator
 };
 
 export const HomeRoleSelector: React.FC = () => {
@@ -47,20 +49,20 @@ export const HomeRoleSelector: React.FC = () => {
         </p>
       </div>
 
-      {/* Grid of 5 Role Access Buttons - 2 Columns Layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-xl">
+      {/* Grid of Role Access Buttons - Balanced Grid Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-3xl">
         {ROLES.map((role) => {
           const IconComponent = iconMap[role.icon] || Wrench;
           return (
             <button
               key={role.id}
               onClick={() => setCurrentRole(role.id as RoleType)}
-              className="group relative flex flex-col items-center justify-center p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-600 hover:shadow-lg hover:shadow-blue-900/10 transition-all duration-200 cursor-pointer last:sm:col-span-2 shadow-sm"
+              className="group relative flex flex-col items-center justify-center p-5 bg-white border border-slate-200 rounded-xl hover:border-blue-600 hover:shadow-lg hover:shadow-blue-900/10 transition-all duration-200 cursor-pointer shadow-sm"
             >
-              <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-700 group-hover:bg-[#002855] group-hover:text-white transition-colors mb-3 flex items-center justify-center shadow-inner">
-                <IconComponent className="w-7 h-7" />
+              <div className="w-13 h-13 rounded-full bg-blue-50 text-blue-700 group-hover:bg-[#002855] group-hover:text-white transition-colors mb-3 flex items-center justify-center shadow-inner">
+                <IconComponent className="w-6 h-6" />
               </div>
-              <span className="text-sm font-extrabold tracking-wider text-slate-800 group-hover:text-blue-900 uppercase text-center">
+              <span className="text-xs font-extrabold tracking-wider text-slate-800 group-hover:text-blue-900 uppercase text-center">
                 {role.name}
               </span>
             </button>

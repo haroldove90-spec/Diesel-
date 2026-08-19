@@ -91,7 +91,8 @@ interface WorkshopContextType {
 
   // 6. Purchases & Suppliers (Compras y Proveedores)
   purchaseOrders: PurchaseOrder[];
-  addPurchaseOrder: (poData: Omit<PurchaseOrder, 'id' | 'date' | 'status'>) => PurchaseOrder;
+  addPurchaseOrder: (poData: Omit<PurchaseOrder, 'id' | 'date' | 'status'>, initialStatus?: PurchaseOrder['status'], createdByRole?: string) => PurchaseOrder;
+  authorizePurchaseOrder: (poId: string, authorizedBy?: string) => void;
   receivePurchaseOrder: (poId: string, bankAccountId?: string) => void;
   addDirectExpensePurchase: (data: { supplierId: string; supplierName: string; supplierEmail: string; expenseCategory: PurchaseOrder['expenseCategory']; items: PurchaseOrder['items']; subtotal: number; taxIva: number; total: number; paymentMethod: PurchaseOrder['paymentMethod']; bankAccountId?: string; notes?: string }) => PurchaseOrder;
 
@@ -691,18 +692,40 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   // 6. PURCHASES (COMPRAS Y PROVEEDORES)
-  const addPurchaseOrder = (poData: Omit<PurchaseOrder, 'id' | 'date' | 'status'>): PurchaseOrder => {
+  const addPurchaseOrder = (
+    poData: Omit<PurchaseOrder, 'id' | 'date' | 'status'>, 
+    initialStatus?: PurchaseOrder['status'], 
+    createdByRole?: string
+  ): PurchaseOrder => {
     const nextNum = 8020 + purchaseOrders.length + 1;
     const now = new Date().toISOString().replace('T', ' ').slice(0, 10);
+    const status = initialStatus || (currentRole === 'almacen' ? 'Pendiente de Autorización' : 'Enviada a Proveedor');
     const newPO: PurchaseOrder = {
       ...poData,
       id: `OC-${nextNum}`,
       date: now,
-      status: 'Enviada a Proveedor',
-      sentAt: new Date().toISOString().replace('T', ' ').slice(0, 16)
+      status,
+      createdByRole: createdByRole || currentRole || undefined,
+      sentAt: status === 'Enviada a Proveedor' ? new Date().toISOString().replace('T', ' ').slice(0, 16) : undefined
     };
     setPurchaseOrders(prev => [newPO, ...prev]);
     return newPO;
+  };
+
+  const authorizePurchaseOrder = (poId: string, authorizedBy?: string) => {
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 16);
+    setPurchaseOrders(prev => prev.map(po => {
+      if (po.id === poId) {
+        return {
+          ...po,
+          status: 'Autorizada',
+          authorizedBy: authorizedBy || 'Dirección Administrativa',
+          authorizedAt: now,
+          sentAt: now
+        };
+      }
+      return po;
+    }));
   };
 
   const receivePurchaseOrder = (poId: string, bankAccountId?: string) => {
@@ -1169,6 +1192,7 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       returnToolFromTechnician,
       purchaseOrders,
       addPurchaseOrder,
+      authorizePurchaseOrder,
       receivePurchaseOrder,
       addDirectExpensePurchase,
       clientContacts,

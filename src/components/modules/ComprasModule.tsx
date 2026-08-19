@@ -21,8 +21,10 @@ import {
 
 export const ComprasModule: React.FC = () => {
   const { 
+    currentRole,
     purchaseOrders, 
     addPurchaseOrder, 
+    authorizePurchaseOrder,
     receivePurchaseOrder, 
     addDirectExpensePurchase, 
     supplierContacts, 
@@ -126,7 +128,16 @@ export const ComprasModule: React.FC = () => {
     });
 
     setShowAddModal(false);
-    showAlert(`Orden de Compra generada con éxito por $${total.toLocaleString()} MXN.`);
+    if (currentRole === 'almacen') {
+      showAlert(`Orden de Compra generada por Almacén y enviada a Dirección para su Autorización.`);
+    } else {
+      showAlert(`Orden de Compra generada con éxito por $${total.toLocaleString()} MXN.`);
+    }
+  };
+
+  const handleAuthorizeOrder = (orderId: string) => {
+    authorizePurchaseOrder(orderId, 'Dirección Administrativa');
+    showAlert(`Orden de Compra ${orderId} autorizada exitosamente. Lista para surtido y recepción.`);
   };
 
   const handleReceiveOrder = (orderId: string) => {
@@ -282,8 +293,10 @@ export const ComprasModule: React.FC = () => {
 
           <div className="divide-y divide-slate-100">
             {filteredOrders.map((order) => {
+              const isPendingAuth = order.status === 'Pendiente de Autorización';
+              const isAuthorized = order.status === 'Autorizada' || order.status === 'Enviada a Proveedor';
               const isReceived = order.status === 'Recibida en Almacén';
-              const isSent = order.status === 'Enviada a Proveedor';
+              const canAuthorize = currentRole === 'direccion' || currentRole === 'contabilidad' || !currentRole;
 
               return (
                 <div key={order.id} className="p-4 hover:bg-slate-50/80 transition-colors flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
@@ -298,23 +311,36 @@ export const ComprasModule: React.FC = () => {
                       <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
                         {order.expenseCategory}
                       </span>
-                      <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase ${
+                      <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1 ${
                         isReceived ? 'bg-emerald-100 text-emerald-800' :
-                        isSent ? 'bg-blue-100 text-blue-800' :
-                        'bg-amber-100 text-amber-800'
+                        isPendingAuth ? 'bg-amber-100 text-amber-900 border border-amber-300' :
+                        'bg-blue-100 text-blue-800'
                       }`}>
+                        {isPendingAuth && <Clock className="w-3 h-3 text-amber-700" />}
+                        {isReceived && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
                         {order.status}
                       </span>
+                      {order.createdByRole === 'almacen' && (
+                        <span className="text-[9px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-mono">
+                          Creada por Almacén
+                        </span>
+                      )}
                     </div>
 
                     <div className="text-xs text-slate-600">
                       <strong>Artículos:</strong> {order.items.map(i => `${i.quantity}x ${i.description}`).join(', ')}
                     </div>
 
-                    <div className="text-xs text-slate-400 flex items-center gap-3">
+                    <div className="text-xs text-slate-400 flex flex-wrap items-center gap-2">
                       <span>Fecha: {order.date}</span>
                       <span>•</span>
                       <span>Pago: {order.paymentMethod}</span>
+                      {order.authorizedBy && (
+                        <>
+                          <span>•</span>
+                          <span className="text-blue-700 font-bold">Autorizada por: {order.authorizedBy}</span>
+                        </>
+                      )}
                       {order.receivedAt && (
                         <>
                           <span>•</span>
@@ -329,8 +355,28 @@ export const ComprasModule: React.FC = () => {
                     <div className="text-base font-black text-slate-900">${order.total.toLocaleString()} MXN</div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    {!isReceived && (
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {/* Direction Authorization Button */}
+                    {isPendingAuth && canAuthorize && (
+                      <button
+                        onClick={() => handleAuthorizeOrder(order.id)}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 rounded-lg shadow-sm transition-all cursor-pointer animate-pulse"
+                        title="Autorizar Orden de Compra para enviar al proveedor"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Autorizar OC</span>
+                      </button>
+                    )}
+
+                    {/* Pending state for warehouse */}
+                    {isPendingAuth && currentRole === 'almacen' && (
+                      <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                        Esperando Autorización de Dirección
+                      </span>
+                    )}
+
+                    {/* Receive Goods Button (once authorized or sent) */}
+                    {(isAuthorized) && (
                       <button
                         onClick={() => handleReceiveOrder(order.id)}
                         className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-all cursor-pointer"
