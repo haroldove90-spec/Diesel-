@@ -726,14 +726,100 @@ export const PerfilModule: React.FC = () => {
       {/* TAB 2: CATÁLOGO DE PACS AUTORIZADOS SAT */}
       {activeTab === 'catalogo' && (
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-          <div className="border-b border-slate-200 pb-3">
-            <h2 className="text-xs font-black uppercase tracking-wider text-[#002855] flex items-center gap-2">
-              <Server className="w-4 h-4 text-blue-600" />
-              <span>Lista de Proveedores PAC Compatibles y Autorizados SAT</span>
-            </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Cualquiera de estos proveedores puede ser utilizado para timbrar facturas en TSR SONORA. Haz clic en "Seleccionar este PAC" para activarlo.
-            </p>
+          <div className="border-b border-slate-200 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xs font-black uppercase tracking-wider text-[#002855] flex items-center gap-2">
+                <Server className="w-4 h-4 text-blue-600" />
+                <span>Lista de Proveedores PAC Compatibles y Autorizados SAT</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Cualquiera de estos proveedores puede ser utilizado para timbrar facturas en TSR SONORA. Haz clic en "Seleccionar este PAC" para activarlo.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const printWindow = window.open('', '_blank');
+                if (!printWindow) return;
+                
+                const tableRows = PAC_CATALOG.filter(p => p.id !== 'Personalizado').map(p => `
+                  <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; font-weight: bold; color: #002855;">${p.name}</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px; color: #1e293b;"><span style="background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-weight: bold;">${p.satNumber}</span></td>
+                    <td style="padding: 12px; font-size: 13px;"><a href="${p.website}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600;">${p.website}</a></td>
+                    <td style="padding: 12px; font-size: 12px; color: #334155;">${p.description}</td>
+                    <td style="padding: 12px; font-size: 11px; color: #475569; background: #f8fafc;">${p.instructions}</td>
+                  </tr>
+                `).join('');
+
+                printWindow.document.write(`
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <title>Guía de Proveedores PAC Autorizados SAT - TSR SONORA</title>
+                    <style>
+                      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 30px; color: #0f172a; margin: 0; }
+                      .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #002855; padding-bottom: 15px; margin-bottom: 20px; }
+                      .title { font-size: 20px; font-weight: 900; color: #002855; text-transform: uppercase; margin: 0; }
+                      .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
+                      table { width: 100%; border-collapse: collapse; margin-top: 15px; text-align: left; }
+                      th { background-color: #002855; color: #ffffff; padding: 10px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+                      .footer { margin-top: 30px; font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+                      @media print {
+                        body { padding: 15px; }
+                        button { display: none; }
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="header">
+                      <div>
+                        <h1 class="title">TSR SONORA • FACTURACIÓN CFDI 4.0</h1>
+                        <p class="subtitle">Guía de Proveedores Autorizados de Certificación (PAC) compatibles ante el SAT</p>
+                      </div>
+                      <div style="text-align: right; font-size: 11px; color: #64748b;">
+                        <strong>Fecha:</strong> ${new Date().toLocaleDateString('es-MX')}<br/>
+                        <strong>Emisor:</strong> ${config.rfc}
+                      </div>
+                    </div>
+
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 16px; border-radius: 8px; font-size: 12px; color: #166534; margin-bottom: 20px;">
+                      <strong>✓ Todos los proveedores listados son oficiales y 100% compatibles</strong> con el sistema TSR SONORA. Tu cliente puede registrarse en cualquiera de los enlaces para adquirir folios de timbrado y generar sus credenciales de API.
+                    </div>
+
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Proveedor PAC</th>
+                          <th>No. SAT</th>
+                          <th>Portal Oficial (Link)</th>
+                          <th>Descripción</th>
+                          <th>Credenciales Requeridas</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${tableRows}
+                      </tbody>
+                    </table>
+
+                    <div class="footer">
+                      TSR SONORA • Tractoservices & Diesel Parts • Blvd. Solidaridad #1024, Hermosillo, Sonora • CFDI 4.0
+                    </div>
+
+                    <script>
+                      window.onload = function() { window.print(); }
+                    </script>
+                  </body>
+                  </html>
+                `);
+                printWindow.document.close();
+              }}
+              className="flex items-center gap-2 bg-[#002855] hover:bg-blue-900 text-white px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm transition-all cursor-pointer shrink-0"
+            >
+              <FileCode className="w-4 h-4" />
+              <span>Imprimir / Guardar en PDF</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
