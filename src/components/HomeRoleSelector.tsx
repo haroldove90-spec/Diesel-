@@ -132,8 +132,8 @@ export const HomeRoleSelector: React.FC = () => {
         ]).select();
 
         if (minError) {
-          console.warn('Supabase app_users note:', minError.message);
-          // If table doesn't exist yet in Supabase (Invalid path / relation does not exist / 404)
+          console.error('Supabase app_users error:', minError);
+          // Check if table does not exist or invalid path
           if (
             minError.message.includes('Invalid path') || 
             minError.message.includes('relation') || 
@@ -141,14 +141,17 @@ export const HomeRoleSelector: React.FC = () => {
             minError.code === '42P01' ||
             minError.code === 'PGRST200'
           ) {
-            console.info('Table app_users not yet created in Supabase. Proceeding in active session mode.');
-            savedInSupabase = false;
+            setAuthError('La tabla "app_users" aún no existe en Supabase. Debes crearla en Supabase > SQL Editor ejecutando el script.');
+            setIsSubmitting(false);
+            return;
           } else if (minError.code === '42501' || minError.message.includes('row-level security')) {
-            console.info('Supabase RLS active. Proceeding in active session mode.');
-            savedInSupabase = false;
+            setAuthError('Error de permisos en Supabase (RLS): Debes ejecutar las políticas del script SQL en Supabase.');
+            setIsSubmitting(false);
+            return;
           } else {
-            console.warn('Supabase insert notice:', minError.message);
-            savedInSupabase = false;
+            setAuthError(`Supabase error: ${minError.message}`);
+            setIsSubmitting(false);
+            return;
           }
         } else {
           savedInSupabase = true;
@@ -157,8 +160,10 @@ export const HomeRoleSelector: React.FC = () => {
         savedInSupabase = true;
       }
     } catch (err: any) {
-      console.warn('Supabase connection warning:', err);
-      savedInSupabase = false;
+      console.error('Supabase connection warning:', err);
+      setAuthError(`Error de conexión a Supabase: ${err?.message || 'No se pudo conectar'}`);
+      setIsSubmitting(false);
+      return;
     }
 
     // Save in local state and context
