@@ -77,13 +77,36 @@ export const HomeRoleSelector: React.FC = () => {
       return;
     }
 
+    const cleanEmail = adminEmail.trim().toLowerCase();
+    const cleanName = adminName.trim();
+
+    // Check if user already exists in local system state
+    const existingLocalUser = users.find(u => u.email.toLowerCase() === cleanEmail);
+    if (existingLocalUser) {
+      setAuthError(`El correo "${cleanEmail}" ya está registrado en el sistema. Puedes ir a la pestaña "Iniciar Sesión" para ingresar.`);
+      return;
+    }
+
     setIsSubmitting(true);
+
+    // Check if user already exists in Supabase
+    try {
+      const { data: existingDbUser } = await supabase
+        .from('app_users')
+        .select('id, email, name')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (existingDbUser) {
+        setAuthError(`El correo "${cleanEmail}" ya existe registrado en Supabase. Ve a la pestaña "Iniciar Sesión" para entrar.`);
+        setIsSubmitting(false);
+        return;
+      }
+    } catch {}
 
     const newAdminId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
       ? crypto.randomUUID() 
       : `usr-${Date.now()}`;
-    const cleanEmail = adminEmail.trim().toLowerCase();
-    const cleanName = adminName.trim();
 
     const newAdminUser: User = {
       id: newAdminId,
@@ -96,13 +119,12 @@ export const HomeRoleSelector: React.FC = () => {
     };
 
     let savedInSupabase = false;
-    let supabaseMsg = '';
 
     try {
-      // 1. Direct insert/upsert into Supabase table: app_users
+      // 1. Direct insert into Supabase table: app_users
       const { data: userInsertData, error: userInsertError } = await supabase
         .from('app_users')
-        .upsert([
+        .insert([
           {
             id: newAdminId,
             name: cleanName,
@@ -118,13 +140,13 @@ export const HomeRoleSelector: React.FC = () => {
       if (!userInsertError) {
         savedInSupabase = true;
       } else {
-        console.warn('Supabase app_users upsert notice:', userInsertError);
+        console.warn('Supabase app_users insert notice:', userInsertError);
         
-        // 2. Fallback attempt into profiles table if app_users is in cache reload
+        // 2. Fallback attempt into profiles table
         try {
           const { error: profError } = await supabase
             .from('profiles')
-            .upsert([
+            .insert([
               {
                 id: newAdminId,
                 name: cleanName,
@@ -147,9 +169,9 @@ export const HomeRoleSelector: React.FC = () => {
 
     setIsSubmitting(false);
     if (savedInSupabase) {
-      setAuthSuccess('¡Administrador registrado y sincronizado exitosamente en Supabase!');
+      setAuthSuccess('¡Administrador registrado y guardado exitosamente en Supabase!');
     } else {
-      setAuthSuccess('¡Bienvenido Harold! Cuenta creada y sesión iniciada en el sistema.');
+      setAuthSuccess('¡Bienvenido! Usuario registrado y sesión iniciada en el sistema.');
     }
 
     setTimeout(() => {
