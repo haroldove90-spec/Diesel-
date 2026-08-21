@@ -174,6 +174,22 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     const fetchSupabaseData = async () => {
       try {
+        // 1. Fetch Users
+        const { data: dbUsers, error: errUsers } = await supabase.from('app_users').select('*');
+        if (!errUsers && dbUsers && dbUsers.length > 0) {
+          const parsedUsers: User[] = dbUsers.map(row => ({
+            id: row.id,
+            name: row.name,
+            email: row.email,
+            role: row.role,
+            specialty: row.specialty,
+            status: row.status as 'activo' | 'inactivo',
+            phone: row.phone
+          }));
+          setUsers(parsedUsers);
+        }
+
+        // 2. Fetch Service Orders
         const { data: dbOrders, error: errOrders } = await supabase.from('service_orders').select('*');
         if (!errOrders && dbOrders && dbOrders.length > 0) {
           const parsed: ServiceOrder[] = dbOrders.map(row => ({
@@ -200,8 +216,87 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           }));
           setOrders(parsed);
         }
+
+        // 3. Fetch Inventory
+        const { data: dbInv, error: errInv } = await supabase.from('inventory_items').select('*');
+        if (!errInv && dbInv && dbInv.length > 0) {
+          const parsedInv: InventoryItem[] = dbInv.map(row => ({
+            id: row.id,
+            code: row.code,
+            name: row.name,
+            category: row.category,
+            subcategory: row.subcategory,
+            brand: row.brand,
+            costPrice: Number(row.cost_price) || 0,
+            salePrice: Number(row.sale_price) || 0,
+            engineApplications: row.engine_applications,
+            equivalences: row.equivalences || [],
+            stock: Number(row.stock) || 0,
+            minStock: Number(row.min_stock) || 0,
+            unit: row.unit || 'pz'
+          }));
+          setInventory(parsedInv);
+        }
+
+        // 4. Fetch Client Contacts
+        const { data: dbClients, error: errClients } = await supabase.from('client_contacts').select('*');
+        if (!errClients && dbClients && dbClients.length > 0) {
+          const parsedClients: ClientContact[] = dbClients.map(row => ({
+            id: row.id,
+            name: row.name,
+            commercialName: row.commercial_name,
+            rfc: row.rfc,
+            regimenFiscal: row.regimen_fiscal,
+            usoCfdi: row.uso_cfdi,
+            email: row.email,
+            phone: row.phone,
+            address: row.address,
+            creditDays: row.credit_days,
+            creditLimit: Number(row.credit_limit) || 0,
+            vehicles: typeof row.vehicles === 'string' ? JSON.parse(row.vehicles) : (row.vehicles || []),
+            totalOrdersCount: 0,
+            createdAt: row.created_at
+          }));
+          setClientContacts(parsedClients);
+        }
+
+        // 5. Fetch Supplier Contacts
+        const { data: dbSuppliers, error: errSuppliers } = await supabase.from('supplier_contacts').select('*');
+        if (!errSuppliers && dbSuppliers && dbSuppliers.length > 0) {
+          const parsedSuppliers: SupplierContact[] = dbSuppliers.map(row => ({
+            id: row.id,
+            companyName: row.company_name,
+            contactPerson: row.contact_person,
+            rfc: row.rfc,
+            email: row.email,
+            phone: row.phone,
+            address: row.address,
+            category: row.category,
+            creditDays: row.credit_days,
+            bankName: row.bank_name,
+            bankAccountClabe: row.bank_account_clabe,
+            suppliesList: row.supplies_list || []
+          }));
+          setSupplierContacts(parsedSuppliers);
+        }
+
+        // 6. Fetch Bank Accounts
+        const { data: dbBanks, error: errBanks } = await supabase.from('bank_accounts').select('*');
+        if (!errBanks && dbBanks && dbBanks.length > 0) {
+          const parsedBanks: BankAccount[] = dbBanks.map(row => ({
+            id: row.id,
+            name: row.name,
+            bankName: row.bank_name,
+            type: row.type as any,
+            accountNumber: row.account_number,
+            clabe: row.clabe,
+            currency: row.currency || 'MXN',
+            currentBalance: Number(row.current_balance) || 0
+          }));
+          setBankAccounts(parsedBanks);
+        }
       } catch (e) {
-        console.log('Supabase sync notice: Using offline/local initial state until tables are migrated.');
+        console.log('Supabase sync notice: Using state until tables respond.');
       }
     };
 
@@ -1150,7 +1245,7 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   // Users
-  const addUser = (userData: Omit<User, 'id' | 'status'>) => {
+  const addUser = async (userData: Omit<User, 'id' | 'status'>) => {
     const newUser: User = {
       ...userData,
       id: `usr-${Date.now()}`,
@@ -1158,26 +1253,35 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     setUsers(prev => [...prev, newUser]);
 
-    supabase.from('users_app').insert([{
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      status: newUser.status,
-      specialty: newUser.specialty,
-      phone: newUser.phone
-    }]).then();
+    try {
+      const { error } = await supabase.from('app_users').insert([{
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        status: newUser.status,
+        specialty: newUser.specialty
+      }]);
+      if (error) {
+        console.error('Error insert app_users:', error);
+      }
+    } catch (e) {
+      console.error('Supabase exception app_users:', e);
+    }
   };
 
-  const toggleUserStatus = (userId: string) => {
-    setUsers(prev => prev.map(u => {
-      if (u.id === userId) {
-        const newStatus = u.status === 'activo' ? 'inactivo' : 'activo';
-        supabase.from('users_app').update({ status: newStatus }).eq('id', userId).then();
-        return { ...u, status: newStatus as 'activo' | 'inactivo' };
-      }
-      return u;
-    }));
+  const toggleUserStatus = async (userId: string) => {
+    const target = users.find(u => u.id === userId);
+    if (!target) return;
+    const newStatus = target.status === 'activo' ? 'inactivo' : 'activo';
+
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus as 'activo' | 'inactivo' } : u));
+
+    try {
+      await supabase.from('app_users').update({ status: newStatus }).eq('id', userId);
+    } catch (e) {
+      console.error('Supabase update status exception:', e);
+    }
   };
 
   return (

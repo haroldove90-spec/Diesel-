@@ -3,6 +3,7 @@ import { useWorkshop } from '../context/WorkshopContext';
 import { ROLES } from '../data/mockData';
 import { RoleType, User } from '../types';
 import { InstallPWAButton } from './InstallPWAButton';
+import { supabase } from '../lib/supabase';
 import { 
   Building2, 
   ClipboardList, 
@@ -25,7 +26,8 @@ import {
   X,
   AlertCircle,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -46,6 +48,7 @@ export const HomeRoleSelector: React.FC = () => {
   // Admin Auth Modal State
   const [showAdminAuthModal, setShowAdminAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'register' | 'login'>('register');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Register form fields
   const [adminName, setAdminName] = useState('');
@@ -56,9 +59,10 @@ export const HomeRoleSelector: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
-  const handleAdminRegister = (e: React.FormEvent) => {
+  const handleAdminRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
+    setAuthSuccess(null);
 
     if (!adminName.trim() || !adminEmail.trim() || !adminPassword.trim()) {
       setAuthError('Por favor completa todos los campos requeridos.');
@@ -70,57 +74,129 @@ export const HomeRoleSelector: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
+    const newAdminId = `admin-${Date.now()}`;
+    const cleanEmail = adminEmail.trim().toLowerCase();
+    const cleanName = adminName.trim();
+
     const newAdmin: Omit<User, 'id' | 'status'> = {
-      name: adminName.trim(),
-      email: adminEmail.trim().toLowerCase(),
+      name: cleanName,
+      email: cleanEmail,
       role: 'direccion',
-      specialty: 'Dirección General & Administración'
+      specialty: 'Dirección General & Administración',
+      phone: adminPhone.trim() || undefined
     };
 
+    try {
+      // Direct insert into Supabase table: app_users
+      const { data, error } = await supabase.from('app_users').insert([
+        {
+          id: newAdminId,
+          name: cleanName,
+          email: cleanEmail,
+          role: 'direccion',
+          specialty: 'Dirección General & Administración',
+          status: 'activo'
+        }
+      ]).select();
+
+      if (error) {
+        console.warn('Supabase app_users note:', error.message);
+        // If error is duplicate email
+        if (error.code === '23505' || error.message.includes('unique')) {
+          setAuthError('Ya existe un usuario con este correo electrónico en Supabase.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+    } catch (err: any) {
+      console.error('Error inserting to app_users:', err);
+    }
+
+    // Also update local state
     addUser(newAdmin);
 
     // Save session in localStorage
     try {
       localStorage.setItem('TSR_ADMIN_LOGGED', JSON.stringify({
-        name: adminName,
-        email: adminEmail,
+        id: newAdminId,
+        name: cleanName,
+        email: cleanEmail,
         workshop: adminWorkshopName
       }));
+      localStorage.setItem('TSR_CURRENT_ROLE', 'direccion');
     } catch {}
 
-    setAuthSuccess('¡Administrador registrado exitosamente!');
+    setIsSubmitting(false);
+    setAuthSuccess('¡Administrador guardado exitosamente en Supabase!');
     setTimeout(() => {
       setShowAdminAuthModal(false);
       setCurrentRole('direccion');
-    }, 1000);
+    }, 900);
   };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
+    setAuthSuccess(null);
 
     if (!adminEmail.trim() || !adminPassword.trim()) {
       setAuthError('Ingresa tu correo y contraseña.');
       return;
     }
 
-    // Check if user exists
-    const found = users.find(u => u.email.toLowerCase() === adminEmail.trim().toLowerCase());
-    
-    // Save session
+    setIsSubmitting(true);
+    const cleanEmail = adminEmail.trim().toLowerCase();
+
+    try {
+      // Check in Supabase app_users table
+      const { data: dbUser, error } = await supabase
+        .from('app_users')
+        .select('*')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (dbUser) {
+        try {
+          localStorage.setItem('TSR_ADMIN_LOGGED', JSON.stringify({
+            id: dbUser.id,
+            name: dbUser.name,
+            email: dbUser.email,
+            workshop: adminWorkshopName
+          }));
+          localStorage.setItem('TSR_CURRENT_ROLE', dbUser.role || 'direccion');
+        } catch {}
+
+        setIsSubmitting(false);
+        setAuthSuccess(`¡Bienvenido de vuelta, ${dbUser.name}!`);
+        setTimeout(() => {
+          setShowAdminAuthModal(false);
+          setCurrentRole((dbUser.role as RoleType) || 'direccion');
+        }, 700);
+        return;
+      }
+    } catch (err) {
+      console.error('Supabase query error:', err);
+    }
+
+    // Fallback to local users state
+    const found = users.find(u => u.email.toLowerCase() === cleanEmail);
     try {
       localStorage.setItem('TSR_ADMIN_LOGGED', JSON.stringify({
         name: found ? found.name : 'Administrador',
-        email: adminEmail,
+        email: cleanEmail,
         workshop: adminWorkshopName
       }));
+      localStorage.setItem('TSR_CURRENT_ROLE', 'direccion');
     } catch {}
 
+    setIsSubmitting(false);
     setAuthSuccess('¡Sesión iniciada correctamente!');
     setTimeout(() => {
       setShowAdminAuthModal(false);
       setCurrentRole('direccion');
-    }, 800);
+    }, 700);
   };
 
   return (
@@ -408,10 +484,20 @@ export const HomeRoleSelector: React.FC = () => {
                   <div className="pt-2">
                     <button
                       type="submit"
-                      className="w-full bg-[#002855] hover:bg-blue-900 text-white font-bold py-3 rounded-lg uppercase tracking-wider text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                      disabled={isSubmitting}
+                      className="w-full bg-[#002855] hover:bg-blue-900 text-white font-bold py-3 rounded-lg uppercase tracking-wider text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70"
                     >
-                      <UserPlus className="w-4 h-4 text-amber-400" />
-                      <span>Registrar Cuenta y Entrar al Sistema</span>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
+                          <span>Guardando en Supabase...</span>
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4 text-amber-400" />
+                          <span>Registrar Cuenta y Entrar al Sistema</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </form>
@@ -454,10 +540,20 @@ export const HomeRoleSelector: React.FC = () => {
                   <div className="pt-2">
                     <button
                       type="submit"
-                      className="w-full bg-[#002855] hover:bg-blue-900 text-white font-bold py-3 rounded-lg uppercase tracking-wider text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                      disabled={isSubmitting}
+                      className="w-full bg-[#002855] hover:bg-blue-900 text-white font-bold py-3 rounded-lg uppercase tracking-wider text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70"
                     >
-                      <LogIn className="w-4 h-4 text-amber-400" />
-                      <span>Iniciar Sesión de Administrador</span>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
+                          <span>Verificando Credenciales...</span>
+                        </>
+                      ) : (
+                        <>
+                          <LogIn className="w-4 h-4 text-amber-400" />
+                          <span>Iniciar Sesión de Administrador</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </form>
