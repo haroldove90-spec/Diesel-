@@ -24,41 +24,41 @@ export const ReportesVentasModule: React.FC = () => {
   const [activeReport, setActiveReport] = useState<'ventas' | 'tecnicos' | 'cajas'>('ventas');
   const [selectedPeriod, setSelectedPeriod] = useState<'mes' | 'semana' | 'hoy'>('mes');
 
-  // Calculations for Sales Report
+  // Calculations for Sales Report from REAL data
   const totalLaborRevenue = orders
     .filter(o => o.paymentStatus === 'liquidado')
     .reduce((sum, o) => {
-      const labor = o.labor.reduce((lSum, l) => lSum + (l.hours * l.hourlyRate), 0);
+      const labor = (o.labor || []).reduce((lSum, l) => lSum + (l.hours * l.hourlyRate), 0);
       return sum + labor;
-    }, 0) + 128500;
+    }, 0);
 
   const totalPartsRevenue = orders
     .filter(o => o.paymentStatus === 'liquidado')
     .reduce((sum, o) => {
-      const parts = o.parts.reduce((pSum, p) => pSum + (p.quantity * p.unitPrice), 0);
+      const parts = (o.parts || []).reduce((pSum, p) => pSum + (p.quantity * p.unitPrice), 0);
       return sum + parts;
-    }, 0) + 195400;
+    }, 0);
 
-  const totalPosSales = posReceipts.reduce((sum, r) => sum + r.total, 0) + 64200;
+  const totalPosSales = posReceipts.reduce((sum, r) => sum + r.total, 0);
   const grandTotalSales = totalLaborRevenue + totalPartsRevenue + totalPosSales;
 
-  // Technicians Productivity
+  // Technicians Productivity from REAL data
   const technicians = users.filter(u => u.role === 'tecnico');
   const techStats = technicians.map(tech => {
-    const techOrders = orders.filter(o => o.technician === tech.name);
+    const techOrders = orders.filter(o => o.assignedTechnicianId === tech.id || o.assignedTechnicianName === tech.name || o.technician === tech.name);
     const completedOrders = techOrders.filter(o => o.status === 'Finalizada' || o.status === 'Listo para Entrega' || o.status === 'Entregada');
     const totalHours = techOrders.reduce((sum, o) => {
-      return sum + o.labor.reduce((lSum, l) => lSum + l.hours, 0);
-    }, 0) || (completedOrders.length * 4.5);
-    const efficiency = completedOrders.length > 0 ? 94 + (completedOrders.length % 5) : 85;
+      return sum + (o.labor || []).reduce((lSum, l) => lSum + l.hours, 0);
+    }, 0);
+    const efficiency = techOrders.length > 0 ? Math.round((completedOrders.length / techOrders.length) * 100) : 0;
 
     return {
       tech,
-      totalOrders: techOrders.length || 6,
-      completedOrders: completedOrders.length || 5,
+      totalOrders: techOrders.length,
+      completedOrders: completedOrders.length,
       totalHours: Math.round(totalHours),
-      efficiency: Math.min(99, efficiency),
-      estimatedCommission: (completedOrders.length || 5) * 650
+      efficiency,
+      estimatedCommission: completedOrders.length * 500
     };
   });
 
@@ -205,12 +205,12 @@ export const ReportesVentasModule: React.FC = () => {
                 <div>
                   <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
                     <span>Mano de Obra y Servicios Especializados</span>
-                    <span>${totalLaborRevenue.toLocaleString()} MXN ({((totalLaborRevenue / grandTotalSales) * 100).toFixed(1)}%)</span>
+                    <span>${totalLaborRevenue.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN ({grandTotalSales > 0 ? ((totalLaborRevenue / grandTotalSales) * 100).toFixed(1) : '0.0'}%)</span>
                   </div>
                   <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-blue-600 rounded-full" 
-                      style={{ width: `${(totalLaborRevenue / grandTotalSales) * 100}%` }}
+                      style={{ width: `${grandTotalSales > 0 ? (totalLaborRevenue / grandTotalSales) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
@@ -219,12 +219,12 @@ export const ReportesVentasModule: React.FC = () => {
                 <div>
                   <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
                     <span>Refacciones y Filtros en Órdenes de Servicio</span>
-                    <span>${totalPartsRevenue.toLocaleString()} MXN ({((totalPartsRevenue / grandTotalSales) * 100).toFixed(1)}%)</span>
+                    <span>${totalPartsRevenue.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN ({grandTotalSales > 0 ? ((totalPartsRevenue / grandTotalSales) * 100).toFixed(1) : '0.0'}%)</span>
                   </div>
                   <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-indigo-600 rounded-full" 
-                      style={{ width: `${(totalPartsRevenue / grandTotalSales) * 100}%` }}
+                      style={{ width: `${grandTotalSales > 0 ? (totalPartsRevenue / grandTotalSales) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
@@ -233,12 +233,12 @@ export const ReportesVentasModule: React.FC = () => {
                 <div>
                   <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
                     <span>Ventas de Mostrador (Almacén POS)</span>
-                    <span>${totalPosSales.toLocaleString()} MXN ({((totalPosSales / grandTotalSales) * 100).toFixed(1)}%)</span>
+                    <span>${totalPosSales.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN ({grandTotalSales > 0 ? ((totalPosSales / grandTotalSales) * 100).toFixed(1) : '0.0'}%)</span>
                   </div>
                   <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-teal-600 rounded-full" 
-                      style={{ width: `${(totalPosSales / grandTotalSales) * 100}%` }}
+                      style={{ width: `${grandTotalSales > 0 ? (totalPosSales / grandTotalSales) * 100 : 0}%` }}
                     />
                   </div>
                 </div>

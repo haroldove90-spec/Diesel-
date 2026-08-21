@@ -120,13 +120,47 @@ interface WorkshopContextType {
 
   // Users
   users: User[];
-  addUser: (user: Omit<User, 'id' | 'status'>) => void;
+  currentUser: User | null;
+  setCurrentUser: (user: User | null) => void;
+  addUser: (user: Omit<User, 'id' | 'status'>) => Promise<{ success: boolean; error?: string }>;
   toggleUserStatus: (userId: string) => void;
 }
 
 const WorkshopContext = createContext<WorkshopContextType | undefined>(undefined);
 
 export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [currentUser, setCurrentUserState] = useState<User | null>(() => {
+    try {
+      const saved = localStorage.getItem('TSR_LOGGED_USER') || localStorage.getItem('TSR_ADMIN_LOGGED');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          id: parsed.id || 'admin-root',
+          name: parsed.name || 'Administrador',
+          email: parsed.email || 'admin@tsrsonora.com',
+          role: (parsed.role as RoleType) || 'direccion',
+          status: 'activo',
+          specialty: parsed.specialty || 'Dirección General & Administración',
+          phone: parsed.phone
+        };
+      }
+    } catch {}
+    return null;
+  });
+
+  const setCurrentUser = (user: User | null) => {
+    setCurrentUserState(user);
+    try {
+      if (user) {
+        localStorage.setItem('TSR_LOGGED_USER', JSON.stringify(user));
+        localStorage.setItem('TSR_ADMIN_LOGGED', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('TSR_LOGGED_USER');
+        localStorage.removeItem('TSR_ADMIN_LOGGED');
+      }
+    } catch {}
+  };
+
   const [currentRole, setCurrentRoleState] = useState<RoleType | null>(() => {
     try {
       const saved = localStorage.getItem('TSR_CURRENT_ROLE');
@@ -1245,28 +1279,51 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   // Users
-  const addUser = async (userData: Omit<User, 'id' | 'status'>) => {
+  const addUser = async (userData: Omit<User, 'id' | 'status'>): Promise<{ success: boolean; error?: string }> => {
+    const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+      ? crypto.randomUUID() 
+      : `usr-${Date.now()}`;
+
     const newUser: User = {
       ...userData,
-      id: `usr-${Date.now()}`,
+      id: newId,
       status: 'activo'
     };
-    setUsers(prev => [...prev, newUser]);
+    setUsers(prev => [...prev.filter(u => u.email.toLowerCase() !== newUser.email.toLowerCase()), newUser]);
 
     try {
-      const { error } = await supabase.from('app_users').insert([{
+      // 1. Try full insert
+      const { error: fullError } = await supabase.from('app_users').insert([{
         id: newUser.id,
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
         status: newUser.status,
-        specialty: newUser.specialty
+        specialty: newUser.specialty || 'General'
       }]);
-      if (error) {
-        console.error('Error insert app_users:', error);
+
+      if (fullError) {
+        console.warn('First insert attempt notice:', fullError.message);
+        
+        // 2. Retry with minimal standard columns if schema differs
+        const { error: minError } = await supabase.from('app_users').insert([{
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+          specialty: newUser.specialty || 'General'
+        }]);
+
+        if (minError) {
+          console.error('Supabase error inserting user:', minError);
+          return { success: false, error: minError.message };
+        }
       }
-    } catch (e) {
+
+      return { success: true };
+    } catch (e: any) {
       console.error('Supabase exception app_users:', e);
+      return { success: false, error: e?.message || 'Error de conexión con Supabase' };
     }
   };
 
@@ -1288,6 +1345,8 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     <WorkshopContext.Provider value={{
       currentRole,
       setCurrentRole,
+      currentUser,
+      setCurrentUser,
       orders,
       addOrder,
       updateOrderStatus,

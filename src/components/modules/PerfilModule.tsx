@@ -160,8 +160,8 @@ const DEFAULT_CONFIG: CompanyFiscalConfig = {
 };
 
 export const PerfilModule: React.FC = () => {
-  const { currentRole, users } = useWorkshop();
-  const currentUser = users.find(u => u.role === currentRole) || users[0];
+  const { currentRole, users, currentUser: globalUser } = useWorkshop();
+  const currentUser = globalUser || users.find(u => u.role === currentRole) || users[0];
 
   // Active Tab within Perfil
   const [activeTab, setActiveTab] = useState<'pac' | 'fiscal' | 'catalogo' | 'usuario'>('pac');

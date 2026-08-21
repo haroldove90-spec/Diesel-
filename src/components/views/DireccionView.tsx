@@ -29,6 +29,7 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
   const { 
     orders, 
     users, 
+    currentUser,
     cashCut, 
     expenses, 
     addExpense, 
@@ -56,27 +57,28 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
   const [newUserRole, setNewUserRole] = useState<RoleType>('tecnico');
   const [newUserSpecialty, setNewUserSpecialty] = useState('');
 
-  // Financial calculations
+  // Financial calculations from REAL data
   const totalServiceRevenue = orders
     .filter(o => o.paymentStatus === 'liquidado')
     .reduce((sum, o) => {
-      const laborCost = o.labor.reduce((lSum, l) => lSum + (l.hours * l.hourlyRate), 0);
+      const laborCost = (o.labor || []).reduce((lSum, l) => lSum + (l.hours * l.hourlyRate), 0);
       return sum + laborCost;
-    }, 0) + 124000; // Base historical
+    }, 0);
 
   const totalPartsRevenue = orders
     .filter(o => o.paymentStatus === 'liquidado')
     .reduce((sum, o) => {
-      const partsCost = o.parts.reduce((pSum, p) => pSum + (p.quantity * p.unitPrice), 0);
+      const partsCost = (o.parts || []).reduce((pSum, p) => pSum + (p.quantity * p.unitPrice), 0);
       return sum + partsCost;
-    }, 0) + 210000;
+    }, 0);
 
   const totalGlobalRevenue = totalServiceRevenue + totalPartsRevenue;
 
   // OS Status breakdown
   const openOrdersCount = orders.filter(o => o.status === 'Diagnóstico' || o.status === 'En Proceso').length;
   const waitingPartsCount = orders.filter(o => o.status === 'Esperando Refacción').length;
-  const finishedOrdersCount = orders.filter(o => o.status === 'Finalizada' || o.status === 'Listo para Entrega').length;
+  const finishedOrdersCount = orders.filter(o => o.status === 'Finalizada' || o.status === 'Listo para Entrega' || o.status === 'Entregada').length;
+  const workshopEfficiency = orders.length > 0 ? ((finishedOrdersCount / orders.length) * 100).toFixed(1) : '0.0';
 
   const criticalStockCount = inventory.filter(i => i.stock <= i.minStock).length;
 
@@ -123,6 +125,39 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
       {/* MODULE 1: DASHBOARD Y REPORTES GERENCIALES */}
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
+          {/* Executive Welcome Banner with Active User Name */}
+          <div className="bg-gradient-to-r from-[#002855] via-blue-900 to-[#001f3f] text-white p-5 rounded-xl border border-blue-800 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-amber-400 text-blue-950 font-black text-xl flex items-center justify-center shadow-md shrink-0">
+                {(currentUser?.name || 'A').charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className="text-base md:text-lg font-black text-white tracking-wide">
+                    {currentUser?.name ? `Bienvenido, ${currentUser.name}` : 'Panel de Dirección General'}
+                  </h1>
+                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    ● En Línea
+                  </span>
+                </div>
+                <p className="text-xs text-blue-200 font-medium mt-0.5 flex items-center gap-2 flex-wrap">
+                  <span>{currentUser?.email || 'direccion@tsrsonora.com'}</span>
+                  <span className="text-blue-400">•</span>
+                  <span className="text-amber-300 font-bold uppercase tracking-wider text-[11px]">
+                    {currentUser?.role === 'direccion' ? 'Dirección General & Administración' : currentUser?.specialty || 'Administrador'}
+                  </span>
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 bg-blue-950/70 border border-blue-700/50 px-3.5 py-2 rounded-lg text-xs self-stretch md:self-auto justify-between md:justify-start">
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="font-bold text-slate-100 uppercase tracking-wider text-[11px]">TSR SONORA SA DE CV</span>
+              </div>
+            </div>
+          </div>
+
           {/* Top KPI Metric Cards */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="card-flat border-blue-600">
@@ -133,10 +168,9 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
                 ${totalGlobalRevenue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
               </p>
               <div className="flex items-center gap-2 mt-1 text-[10px]">
-                <span className="text-emerald-600 font-bold flex items-center gap-0.5">
-                  <TrendingUp className="w-3 h-3" /> +14.2%
+                <span className="text-slate-500 font-medium">
+                  {orders.filter(o => o.paymentStatus === 'liquidado').length} órdenes liquidadas
                 </span>
-                <span className="text-slate-500">vs Mes Anterior</span>
               </div>
             </div>
 
@@ -157,7 +191,7 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
                 Efectividad del Taller
               </p>
               <p className="text-2xl font-bold text-slate-900 font-mono mt-1">
-                92.4%
+                {workshopEfficiency}%
               </p>
               <p className="text-[10px] text-emerald-600 font-bold mt-1">
                 {finishedOrdersCount} Órdenes Entregadas
@@ -172,7 +206,7 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
                 {criticalStockCount} Items
               </p>
               <p className="text-[10px] text-blue-700 font-bold mt-1">
-                Revisar Alertas Kardex
+                {criticalStockCount > 0 ? 'Revisar Alertas Kardex' : 'Inventario en Óptimas Condiciones'}
               </p>
             </div>
           </section>
@@ -191,13 +225,13 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-slate-700 font-medium">Servicios de Taller (Mano de Obra)</span>
                     <span className="font-mono text-slate-900 font-bold">
-                      ${totalServiceRevenue.toLocaleString('es-MX')}
+                      ${totalServiceRevenue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                     <div 
                       className="bg-[#002855] h-full rounded-full" 
-                      style={{ width: `${(totalServiceRevenue / totalGlobalRevenue) * 100}%` }}
+                      style={{ width: `${totalGlobalRevenue > 0 ? (totalServiceRevenue / totalGlobalRevenue) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
@@ -206,13 +240,13 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-slate-700 font-medium">Venta de Refacciones Diesel</span>
                     <span className="font-mono text-slate-900 font-bold">
-                      ${totalPartsRevenue.toLocaleString('es-MX')}
+                      ${totalPartsRevenue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                     <div 
                       className="bg-blue-600 h-full rounded-full" 
-                      style={{ width: `${(totalPartsRevenue / totalGlobalRevenue) * 100}%` }}
+                      style={{ width: `${totalGlobalRevenue > 0 ? (totalPartsRevenue / totalGlobalRevenue) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
@@ -220,7 +254,9 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
 
               <div className="mt-6 p-3 bg-blue-50/60 border border-blue-100 rounded-lg text-xs flex justify-between items-center">
                 <span className="text-slate-600 font-medium">Margen Operativo Bruto Estimado:</span>
-                <span className="font-mono text-emerald-700 font-bold text-sm">38.6%</span>
+                <span className="font-mono text-emerald-700 font-bold text-sm">
+                  {totalGlobalRevenue > 0 ? `${((totalGlobalRevenue - expenses.reduce((s, e) => s + e.amount, 0)) / totalGlobalRevenue * 100).toFixed(1)}%` : '0.0%'}
+                </span>
               </div>
             </div>
 
@@ -230,29 +266,36 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
                 Rendimiento y Productividad por Técnico
               </h2>
 
-              <div className="space-y-3">
-                {[
-                  { name: 'Ricardo M.', specialty: 'Cummins & Detroit', osCount: 8, hours: 42, efficiency: '96%' },
-                  { name: 'Samuel V.', specialty: 'Turbos & Emisiones', osCount: 6, hours: 38, efficiency: '91%' },
-                  { name: 'Daniel O.', specialty: 'Frenos & Tren Motriz', osCount: 7, hours: 35, efficiency: '94%' }
-                ].map((tech, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full bg-blue-100 text-[#002855] flex items-center justify-center font-bold text-xs">
-                        #{idx + 1}
+              {users.filter(u => u.role === 'tecnico').length === 0 ? (
+                <div className="p-8 text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                  <p className="text-xs text-slate-500 font-medium">No hay técnicos registrados aún.</p>
+                  <p className="text-[11px] text-slate-400 mt-1">Registra técnicos desde la pestaña "Personal & Roles".</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {users.filter(u => u.role === 'tecnico').map((tech, idx) => {
+                    const techOrders = orders.filter(o => o.assignedTechnicianId === tech.id || o.assignedTechnicianName === tech.name);
+                    const techHours = techOrders.reduce((sum, o) => sum + (o.labor || []).reduce((lSum, l) => lSum + l.hours, 0), 0);
+                    return (
+                      <div key={tech.id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full bg-blue-100 text-[#002855] flex items-center justify-center font-bold text-xs">
+                            #{idx + 1}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">{tech.name}</p>
+                            <p className="text-[10px] text-slate-500 font-medium">{tech.specialty || 'Técnico Diésel'}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-mono font-bold text-blue-700">{techOrders.length} OS</span>
+                          <span className="text-[10px] text-slate-500 block">{techHours} hrs registradas</span>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-900">{tech.name}</p>
-                        <p className="text-[10px] text-slate-500 font-medium">{tech.specialty}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs font-mono font-bold text-blue-700">{tech.osCount} OS</span>
-                      <span className="text-[10px] text-slate-500 block">{tech.hours} hrs billable • <strong className="text-emerald-600">{tech.efficiency}</strong></span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 

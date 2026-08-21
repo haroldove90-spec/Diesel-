@@ -65,16 +65,7 @@ export const INITIAL_ORDERS: ServiceOrder[] = [];
 
 export const INITIAL_WAREHOUSE_REQUESTS: WarehouseRequest[] = [];
 
-export const INITIAL_USERS: User[] = [
-  { 
-    id: 'admin-1', 
-    name: 'Administrador General', 
-    email: 'admin@tsrsonora.com', 
-    role: 'direccion', 
-    status: 'activo', 
-    specialty: 'Administración & Dirección General' 
-  }
-];
+export const INITIAL_USERS: User[] = [];
 
 export const INITIAL_CASH_CUT: CashCut = {
   id: 'cut-init',

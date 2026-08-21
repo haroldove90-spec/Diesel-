@@ -27,7 +27,9 @@ import {
   AlertCircle,
   Sparkles,
   RefreshCw,
-  Loader2
+  Loader2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -43,7 +45,7 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 export const HomeRoleSelector: React.FC = () => {
-  const { setCurrentRole, users, addUser } = useWorkshop();
+  const { setCurrentRole, currentUser, setCurrentUser, users, addUser } = useWorkshop();
 
   // Admin Auth Modal State
   const [showAdminAuthModal, setShowAdminAuthModal] = useState(false);
@@ -55,7 +57,8 @@ export const HomeRoleSelector: React.FC = () => {
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [adminPhone, setAdminPhone] = useState('');
-  const [adminWorkshopName, setAdminWorkshopName] = useState('TSR SONORA SA DE CV');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
@@ -76,21 +79,25 @@ export const HomeRoleSelector: React.FC = () => {
 
     setIsSubmitting(true);
 
-    const newAdminId = `admin-${Date.now()}`;
+    const newAdminId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+      ? crypto.randomUUID() 
+      : `usr-${Date.now()}`;
     const cleanEmail = adminEmail.trim().toLowerCase();
     const cleanName = adminName.trim();
 
-    const newAdmin: Omit<User, 'id' | 'status'> = {
+    const newAdminUser: User = {
+      id: newAdminId,
       name: cleanName,
       email: cleanEmail,
       role: 'direccion',
+      status: 'activo',
       specialty: 'Dirección General & Administración',
       phone: adminPhone.trim() || undefined
     };
 
     try {
-      // Direct insert into Supabase table: app_users
-      const { data, error } = await supabase.from('app_users').insert([
+      // 1. Direct insert into Supabase table: app_users (with status)
+      const { data, error: fullError } = await supabase.from('app_users').insert([
         {
           id: newAdminId,
           name: cleanName,
@@ -101,35 +108,53 @@ export const HomeRoleSelector: React.FC = () => {
         }
       ]).select();
 
-      if (error) {
-        console.warn('Supabase app_users note:', error.message);
-        // If error is duplicate email
-        if (error.code === '23505' || error.message.includes('unique')) {
-          setAuthError('Ya existe un usuario con este correo electrónico en Supabase.');
+      if (fullError) {
+        console.warn('Supabase app_users first attempt:', fullError.message);
+        
+        // If unique constraint error
+        if (fullError.code === '23505' || fullError.message.includes('unique') || fullError.message.includes('duplicate')) {
+          setAuthError('Ya existe un usuario con este correo electrónico en la tabla app_users.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        // 2. Retry with minimal columns if 'status' column is not in user table
+        const { data: minData, error: minError } = await supabase.from('app_users').insert([
+          {
+            id: newAdminId,
+            name: cleanName,
+            email: cleanEmail,
+            role: 'direccion',
+            specialty: 'Dirección General & Administración'
+          }
+        ]).select();
+
+        if (minError) {
+          console.error('Supabase app_users error:', minError);
+          // If RLS blocked it
+          if (minError.code === '42501' || minError.message.includes('row-level security')) {
+            setAuthError('Error de permisos en Supabase (RLS): Ejecuta el script SQL en Supabase para permitir inserts.');
+            setIsSubmitting(false);
+            return;
+          }
+          setAuthError(`Supabase: ${minError.message}`);
           setIsSubmitting(false);
           return;
         }
       }
     } catch (err: any) {
       console.error('Error inserting to app_users:', err);
+      setAuthError(`Error de conexión: ${err?.message || 'No se pudo conectar con Supabase'}`);
+      setIsSubmitting(false);
+      return;
     }
 
-    // Also update local state
-    addUser(newAdmin);
-
-    // Save session in localStorage
-    try {
-      localStorage.setItem('TSR_ADMIN_LOGGED', JSON.stringify({
-        id: newAdminId,
-        name: cleanName,
-        email: cleanEmail,
-        workshop: adminWorkshopName
-      }));
-      localStorage.setItem('TSR_CURRENT_ROLE', 'direccion');
-    } catch {}
+    // Save in local state and context
+    addUser(newAdminUser);
+    setCurrentUser(newAdminUser);
 
     setIsSubmitting(false);
-    setAuthSuccess('¡Administrador guardado exitosamente en Supabase!');
+    setAuthSuccess('¡Administrador guardado exitosamente en la tabla app_users de Supabase!');
     setTimeout(() => {
       setShowAdminAuthModal(false);
       setCurrentRole('direccion');
@@ -158,15 +183,16 @@ export const HomeRoleSelector: React.FC = () => {
         .maybeSingle();
 
       if (dbUser) {
-        try {
-          localStorage.setItem('TSR_ADMIN_LOGGED', JSON.stringify({
-            id: dbUser.id,
-            name: dbUser.name,
-            email: dbUser.email,
-            workshop: adminWorkshopName
-          }));
-          localStorage.setItem('TSR_CURRENT_ROLE', dbUser.role || 'direccion');
-        } catch {}
+        const loggedUser: User = {
+          id: dbUser.id,
+          name: dbUser.name,
+          email: dbUser.email,
+          role: (dbUser.role as RoleType) || 'direccion',
+          status: (dbUser.status as 'activo' | 'inactivo') || 'activo',
+          specialty: dbUser.specialty || 'Dirección General & Administración',
+          phone: dbUser.phone
+        };
+        setCurrentUser(loggedUser);
 
         setIsSubmitting(false);
         setAuthSuccess(`¡Bienvenido de vuelta, ${dbUser.name}!`);
@@ -182,14 +208,15 @@ export const HomeRoleSelector: React.FC = () => {
 
     // Fallback to local users state
     const found = users.find(u => u.email.toLowerCase() === cleanEmail);
-    try {
-      localStorage.setItem('TSR_ADMIN_LOGGED', JSON.stringify({
-        name: found ? found.name : 'Administrador',
-        email: cleanEmail,
-        workshop: adminWorkshopName
-      }));
-      localStorage.setItem('TSR_CURRENT_ROLE', 'direccion');
-    } catch {}
+    const fallbackUser: User = {
+      id: found?.id || `usr-${Date.now()}`,
+      name: found ? found.name : 'Administrador',
+      email: cleanEmail,
+      role: (found?.role as RoleType) || 'direccion',
+      status: 'activo',
+      specialty: 'Dirección General & Administración'
+    };
+    setCurrentUser(fallbackUser);
 
     setIsSubmitting(false);
     setAuthSuccess('¡Sesión iniciada correctamente!');
@@ -441,13 +468,25 @@ export const HomeRoleSelector: React.FC = () => {
                       <div className="relative">
                         <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                         <input
-                          type="password"
+                          type={showPassword ? "text" : "password"}
                           required
                           value={adminPassword}
                           onChange={(e) => setAdminPassword(e.target.value)}
                           placeholder="Mínimo 6 caracteres"
-                          className="w-full bg-slate-50 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white outline-none"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-lg pl-9 pr-10 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white outline-none"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-700 p-0.5 rounded cursor-pointer transition-colors"
+                          title={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="w-4 h-4 text-blue-600" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
                       </div>
                     </div>
 
@@ -466,19 +505,6 @@ export const HomeRoleSelector: React.FC = () => {
                         />
                       </div>
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-700 uppercase block mb-1">
-                      Nombre del Taller o Razón Social
-                    </label>
-                    <input
-                      type="text"
-                      value={adminWorkshopName}
-                      onChange={(e) => setAdminWorkshopName(e.target.value)}
-                      placeholder="TSR SONORA SA DE CV"
-                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-900 font-medium focus:border-blue-600 focus:bg-white outline-none"
-                    />
                   </div>
 
                   <div className="pt-2">
@@ -527,13 +553,25 @@ export const HomeRoleSelector: React.FC = () => {
                     <div className="relative">
                       <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                       <input
-                        type="password"
+                        type={showLoginPassword ? "text" : "password"}
                         required
                         value={adminPassword}
                         onChange={(e) => setAdminPassword(e.target.value)}
                         placeholder="Contraseña"
-                        className="w-full bg-slate-50 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white outline-none"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-lg pl-9 pr-10 py-2 text-slate-900 font-medium focus:border-blue-600 focus:bg-white outline-none"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-700 p-0.5 rounded cursor-pointer transition-colors"
+                        title={showLoginPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                      >
+                        {showLoginPassword ? (
+                          <EyeOff className="w-4 h-4 text-blue-600" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
                     </div>
                   </div>
 
@@ -558,6 +596,17 @@ export const HomeRoleSelector: React.FC = () => {
                   </div>
                 </form>
               )}
+
+              {/* Informative Table Reference Note */}
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                <span className="flex items-center gap-1 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  Tabla en Supabase:
+                </span>
+                <code className="bg-slate-100 text-blue-900 px-2 py-0.5 rounded font-mono font-bold text-[10px] border border-slate-200">
+                  public.app_users
+                </code>
+              </div>
             </div>
           </div>
         </div>
