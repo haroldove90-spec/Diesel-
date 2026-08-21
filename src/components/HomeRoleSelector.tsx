@@ -119,6 +119,7 @@ export const HomeRoleSelector: React.FC = () => {
     };
 
     let savedInSupabase = false;
+    let supabaseErrorMsg = '';
 
     try {
       // 1. Direct insert into Supabase table: app_users
@@ -140,16 +141,29 @@ export const HomeRoleSelector: React.FC = () => {
       if (!userInsertError) {
         savedInSupabase = true;
       } else {
-        console.error('Supabase app_users insert error:', userInsertError);
-        setAuthError(`Supabase error: ${userInsertError.message} (${userInsertError.code || 'Error'})`);
-        setIsSubmitting(false);
-        return;
+        console.warn('Supabase app_users insert notice:', userInsertError);
+        supabaseErrorMsg = userInsertError.message;
+        
+        // 2. Fallback attempt into profiles table
+        try {
+          const { error: profError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: newAdminId,
+                name: cleanName,
+                email: cleanEmail,
+                role: 'direccion'
+              }
+            ]);
+          if (!profError) {
+            savedInSupabase = true;
+          }
+        } catch {}
       }
     } catch (err: any) {
-      console.error('Supabase connection error:', err);
-      setAuthError(`Error conectando con Supabase: ${err?.message || 'Error de red'}`);
-      setIsSubmitting(false);
-      return;
+      console.warn('Supabase connection note:', err);
+      supabaseErrorMsg = err?.message || '';
     }
 
     // Save in local state and context
