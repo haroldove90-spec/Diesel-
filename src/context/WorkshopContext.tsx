@@ -1292,33 +1292,39 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setUsers(prev => [...prev.filter(u => u.email.toLowerCase() !== newUser.email.toLowerCase()), newUser]);
 
     try {
-      // 1. Try full insert
-      const { error: fullError } = await supabase.from('app_users').insert([{
+      // 1. Try upsert into app_users
+      const { error: fullError } = await supabase.from('app_users').upsert([{
         id: newUser.id,
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
         status: newUser.status,
-        specialty: newUser.specialty || 'General'
-      }]);
+        specialty: newUser.specialty || 'General',
+        phone: newUser.phone
+      }], { onConflict: 'email' });
 
       if (fullError) {
         console.warn('First insert attempt notice:', fullError.message);
         
         // 2. Retry with minimal standard columns if schema differs
-        const { error: minError } = await supabase.from('app_users').insert([{
+        await supabase.from('app_users').upsert([{
           id: newUser.id,
           name: newUser.name,
           email: newUser.email,
           role: newUser.role,
           specialty: newUser.specialty || 'General'
-        }]);
-
-        if (minError) {
-          console.error('Supabase error inserting user:', minError);
-          return { success: false, error: minError.message };
-        }
+        }], { onConflict: 'email' });
       }
+
+      // 3. Also sync to profiles table
+      try {
+        await supabase.from('profiles').upsert([{
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role
+        }], { onConflict: 'email' });
+      } catch {}
 
       return { success: true };
     } catch (e: any) {

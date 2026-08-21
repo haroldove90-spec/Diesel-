@@ -98,30 +98,24 @@ export const HomeRoleSelector: React.FC = () => {
     let savedInSupabase = false;
 
     try {
-      // 1. Direct insert into Supabase table: app_users (with status)
-      const { data, error: fullError } = await supabase.from('app_users').insert([
+      // 1. Direct insert into Supabase table: app_users
+      const { data: userInsertData, error: userInsertError } = await supabase.from('app_users').upsert([
         {
           id: newAdminId,
           name: cleanName,
           email: cleanEmail,
           role: 'direccion',
           specialty: 'Dirección General & Administración',
-          status: 'activo'
+          status: 'activo',
+          phone: adminPhone.trim() || undefined
         }
-      ]).select();
+      ], { onConflict: 'email' }).select();
 
-      if (fullError) {
-        console.warn('Supabase app_users first attempt:', fullError.message);
+      if (userInsertError) {
+        console.warn('Supabase app_users upsert attempt:', userInsertError.message);
         
-        // If unique constraint error (user already registered in Supabase)
-        if (fullError.code === '23505' || fullError.message.includes('unique') || fullError.message.includes('duplicate')) {
-          setAuthError('Ya existe un usuario con este correo electrónico en Supabase. Puedes Iniciar Sesión en la otra pestaña.');
-          setIsSubmitting(false);
-          return;
-        }
-
-        // 2. Retry with minimal columns if 'status' column is not in user table
-        const { data: minData, error: minError } = await supabase.from('app_users').insert([
+        // Try fallback insert without phone/status if schema differs
+        const { error: minError } = await supabase.from('app_users').upsert([
           {
             id: newAdminId,
             name: cleanName,
@@ -129,27 +123,12 @@ export const HomeRoleSelector: React.FC = () => {
             role: 'direccion',
             specialty: 'Dirección General & Administración'
           }
-        ]).select();
+        ], { onConflict: 'email' });
 
         if (minError) {
-          console.error('Supabase app_users error:', minError);
-          // Check if table does not exist or invalid path
-          if (
-            minError.message.includes('Invalid path') || 
-            minError.message.includes('relation') || 
-            minError.message.includes('does not exist') ||
-            minError.code === '42P01' ||
-            minError.code === 'PGRST200'
-          ) {
-            setAuthError('La tabla "app_users" aún no existe en Supabase. Debes crearla en Supabase > SQL Editor ejecutando el script.');
-            setIsSubmitting(false);
-            return;
-          } else if (minError.code === '42501' || minError.message.includes('row-level security')) {
-            setAuthError('Error de permisos en Supabase (RLS): Debes ejecutar las políticas del script SQL en Supabase.');
-            setIsSubmitting(false);
-            return;
-          } else {
-            setAuthError(`Supabase error: ${minError.message}`);
+          console.warn('Supabase app_users min error:', minError.message);
+          if (minError.code === '42501' || minError.message.includes('row-level security')) {
+            setAuthError('Permisos bloqueados en Supabase (RLS). Ejecuta el script SQL en Supabase para habilitar INSERT.');
             setIsSubmitting(false);
             return;
           }
@@ -158,6 +137,20 @@ export const HomeRoleSelector: React.FC = () => {
         }
       } else {
         savedInSupabase = true;
+      }
+
+      // 2. Also try syncing to profiles table if it exists
+      try {
+        await supabase.from('profiles').upsert([
+          {
+            id: newAdminId,
+            name: cleanName,
+            email: cleanEmail,
+            role: 'direccion'
+          }
+        ], { onConflict: 'email' });
+      } catch (profErr) {
+        console.info('Profiles table note:', profErr);
       }
     } catch (err: any) {
       console.error('Supabase connection warning:', err);
