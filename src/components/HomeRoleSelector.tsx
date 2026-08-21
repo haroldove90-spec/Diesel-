@@ -89,20 +89,32 @@ export const HomeRoleSelector: React.FC = () => {
 
     setIsSubmitting(true);
 
-    // Check if user already exists in Supabase
+    // 1. First check if user already exists in Supabase
     try {
-      const { data: existingDbUser } = await supabase
+      const { data: existingDbUser, error: checkError } = await supabase
         .from('app_users')
         .select('id, email, name')
         .eq('email', cleanEmail)
         .maybeSingle();
 
       if (existingDbUser) {
-        setAuthError(`El correo "${cleanEmail}" ya existe registrado en Supabase. Ve a la pestaña "Iniciar Sesión" para entrar.`);
+        setAuthError(`El correo "${cleanEmail}" ya está registrado en Supabase a nombre de "${existingDbUser.name}". Ve a la pestaña "Iniciar Sesión" para ingresar.`);
         setIsSubmitting(false);
         return;
       }
-    } catch {}
+
+      if (checkError) {
+        console.error('Supabase query check error:', checkError);
+        setAuthError(`Error de Supabase (${checkError.code || 'PGRST125'}): ${checkError.message}. Ejecuta el script de activación en el SQL Editor.`);
+        setIsSubmitting(false);
+        return;
+      }
+    } catch (err: any) {
+      console.error('Supabase connection check error:', err);
+      setAuthError(`Error conectando con Supabase: ${err?.message || 'Error de red'}`);
+      setIsSubmitting(false);
+      return;
+    }
 
     const newAdminId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
       ? crypto.randomUUID() 
@@ -118,11 +130,8 @@ export const HomeRoleSelector: React.FC = () => {
       phone: adminPhone.trim() || undefined
     };
 
-    let savedInSupabase = false;
-    let supabaseErrorMsg = '';
-
+    // 2. Insert into Supabase table: app_users
     try {
-      // 1. Direct insert into Supabase table: app_users
       const { data: userInsertData, error: userInsertError } = await supabase
         .from('app_users')
         .insert([
@@ -138,44 +147,25 @@ export const HomeRoleSelector: React.FC = () => {
         ])
         .select();
 
-      if (!userInsertError) {
-        savedInSupabase = true;
-      } else {
-        console.warn('Supabase app_users insert notice:', userInsertError);
-        supabaseErrorMsg = userInsertError.message;
-        
-        // 2. Fallback attempt into profiles table
-        try {
-          const { error: profError } = await supabase
-            .from('profiles')
-            .insert([
-              {
-                id: newAdminId,
-                name: cleanName,
-                email: cleanEmail,
-                role: 'direccion'
-              }
-            ]);
-          if (!profError) {
-            savedInSupabase = true;
-          }
-        } catch {}
+      if (userInsertError) {
+        console.error('Supabase insert error:', userInsertError);
+        setAuthError(`Error al guardar en Supabase: ${userInsertError.message} (${userInsertError.code})`);
+        setIsSubmitting(false);
+        return;
       }
     } catch (err: any) {
-      console.warn('Supabase connection note:', err);
-      supabaseErrorMsg = err?.message || '';
+      console.error('Supabase insert catch error:', err);
+      setAuthError(`Error de conexión con la base de datos: ${err?.message || 'Fallo de red'}`);
+      setIsSubmitting(false);
+      return;
     }
 
-    // Save in local state and context
+    // Save in local state and context ONLY after successful Supabase write
     addUser(newAdminUser);
     setCurrentUser(newAdminUser);
 
     setIsSubmitting(false);
-    if (savedInSupabase) {
-      setAuthSuccess('¡Administrador registrado y guardado exitosamente en Supabase!');
-    } else {
-      setAuthSuccess('¡Bienvenido! Usuario registrado y sesión iniciada en el sistema.');
-    }
+    setAuthSuccess('¡Administrador registrado y guardado exitosamente en Supabase!');
 
     setTimeout(() => {
       setShowAdminAuthModal(false);
