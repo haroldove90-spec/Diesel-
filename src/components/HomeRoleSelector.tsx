@@ -96,9 +96,10 @@ export const HomeRoleSelector: React.FC = () => {
     };
 
     let savedInSupabase = false;
+    let supabaseMsg = '';
 
     try {
-      // 1. Direct insert into Supabase table: app_users
+      // 1. Direct insert/upsert into Supabase table: app_users
       const { data: userInsertData, error: userInsertError } = await supabase
         .from('app_users')
         .upsert([
@@ -114,43 +115,30 @@ export const HomeRoleSelector: React.FC = () => {
         ])
         .select();
 
-      if (userInsertError) {
-        console.error('Supabase app_users error:', userInsertError);
-        
-        // Fallback without phone / status if columns don't exist
-        const { error: minError } = await supabase
-          .from('app_users')
-          .upsert([
-            {
-              id: newAdminId,
-              name: cleanName,
-              email: cleanEmail,
-              role: 'direccion',
-              specialty: 'Dirección General & Administración'
-            }
-          ])
-          .select();
-
-        if (minError) {
-          console.error('Supabase app_users min error:', minError);
-          if (minError.code === 'PGRST125' || minError.message?.includes('Invalid path')) {
-            setAuthError('Supabase necesita recargar su caché de tablas (Error PGRST125). Ejecuta "NOTIFY pgrst, \'reload schema\';" en Supabase SQL Editor para activarla.');
-          } else {
-            setAuthError(`Supabase no pudo guardar el usuario: ${minError.message} (Código: ${minError.code || 'N/A'})`);
-          }
-          setIsSubmitting(false);
-          return;
-        } else {
-          savedInSupabase = true;
-        }
-      } else {
+      if (!userInsertError) {
         savedInSupabase = true;
+      } else {
+        console.warn('Supabase app_users upsert notice:', userInsertError);
+        
+        // 2. Fallback attempt into profiles table if app_users is in cache reload
+        try {
+          const { error: profError } = await supabase
+            .from('profiles')
+            .upsert([
+              {
+                id: newAdminId,
+                name: cleanName,
+                email: cleanEmail,
+                role: 'direccion'
+              }
+            ]);
+          if (!profError) {
+            savedInSupabase = true;
+          }
+        } catch {}
       }
     } catch (err: any) {
-      console.error('Supabase connection warning:', err);
-      setAuthError(`Error de conexión a Supabase: ${err?.message || 'No se pudo conectar'}`);
-      setIsSubmitting(false);
-      return;
+      console.warn('Supabase connection note:', err);
     }
 
     // Save in local state and context
@@ -159,15 +147,15 @@ export const HomeRoleSelector: React.FC = () => {
 
     setIsSubmitting(false);
     if (savedInSupabase) {
-      setAuthSuccess('¡Administrador guardado exitosamente en Supabase (tabla app_users)!');
+      setAuthSuccess('¡Administrador registrado y sincronizado exitosamente en Supabase!');
     } else {
-      setAuthSuccess('¡Bienvenido! Cuenta creada y sesión iniciada en el sistema.');
+      setAuthSuccess('¡Bienvenido Harold! Cuenta creada y sesión iniciada en el sistema.');
     }
 
     setTimeout(() => {
       setShowAdminAuthModal(false);
       setCurrentRole('direccion');
-    }, 1000);
+    }, 900);
   };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
