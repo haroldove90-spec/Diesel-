@@ -99,58 +99,48 @@ export const HomeRoleSelector: React.FC = () => {
 
     try {
       // 1. Direct insert into Supabase table: app_users
-      const { data: userInsertData, error: userInsertError } = await supabase.from('app_users').upsert([
-        {
-          id: newAdminId,
-          name: cleanName,
-          email: cleanEmail,
-          role: 'direccion',
-          specialty: 'Dirección General & Administración',
-          status: 'activo',
-          phone: adminPhone.trim() || undefined
-        }
-      ], { onConflict: 'email' }).select();
-
-      if (userInsertError) {
-        console.warn('Supabase app_users upsert attempt:', userInsertError.message);
-        
-        // Try fallback insert without phone/status if schema differs
-        const { error: minError } = await supabase.from('app_users').upsert([
+      const { data: userInsertData, error: userInsertError } = await supabase
+        .from('app_users')
+        .upsert([
           {
             id: newAdminId,
             name: cleanName,
             email: cleanEmail,
             role: 'direccion',
-            specialty: 'Dirección General & Administración'
+            specialty: 'Dirección General & Administración',
+            status: 'activo',
+            phone: adminPhone.trim() || undefined
           }
-        ], { onConflict: 'email' });
+        ])
+        .select();
+
+      if (userInsertError) {
+        console.error('Supabase app_users error:', userInsertError);
+        
+        // Fallback without phone / status if columns don't exist
+        const { error: minError } = await supabase
+          .from('app_users')
+          .upsert([
+            {
+              id: newAdminId,
+              name: cleanName,
+              email: cleanEmail,
+              role: 'direccion',
+              specialty: 'Dirección General & Administración'
+            }
+          ])
+          .select();
 
         if (minError) {
-          console.warn('Supabase app_users min error:', minError.message);
-          if (minError.code === '42501' || minError.message.includes('row-level security')) {
-            setAuthError('Permisos bloqueados en Supabase (RLS). Ejecuta el script SQL en Supabase para habilitar INSERT.');
-            setIsSubmitting(false);
-            return;
-          }
+          console.error('Supabase app_users min error:', minError);
+          setAuthError(`Supabase no pudo guardar el usuario: ${minError.message} (Código: ${minError.code || 'N/A'})`);
+          setIsSubmitting(false);
+          return;
         } else {
           savedInSupabase = true;
         }
       } else {
         savedInSupabase = true;
-      }
-
-      // 2. Also try syncing to profiles table if it exists
-      try {
-        await supabase.from('profiles').upsert([
-          {
-            id: newAdminId,
-            name: cleanName,
-            email: cleanEmail,
-            role: 'direccion'
-          }
-        ], { onConflict: 'email' });
-      } catch (profErr) {
-        console.info('Profiles table note:', profErr);
       }
     } catch (err: any) {
       console.error('Supabase connection warning:', err);
