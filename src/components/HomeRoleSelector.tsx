@@ -133,7 +133,11 @@ export const HomeRoleSelector: React.FC = () => {
 
         if (minError) {
           console.error('Supabase app_users min error:', minError);
-          setAuthError(`Supabase no pudo guardar el usuario: ${minError.message} (Código: ${minError.code || 'N/A'})`);
+          if (minError.code === 'PGRST125' || minError.message?.includes('Invalid path')) {
+            setAuthError('Supabase necesita recargar su caché de tablas (Error PGRST125). Ejecuta "NOTIFY pgrst, \'reload schema\';" en Supabase SQL Editor para activarla.');
+          } else {
+            setAuthError(`Supabase no pudo guardar el usuario: ${minError.message} (Código: ${minError.code || 'N/A'})`);
+          }
           setIsSubmitting(false);
           return;
         } else {
