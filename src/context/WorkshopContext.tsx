@@ -1303,34 +1303,48 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setUsers(prev => [...prev.filter(u => u.email.toLowerCase() !== newUser.email.toLowerCase()), newUser]);
 
     try {
-      // 1. Try upsert into app_users
-      const { error: errAppUsers } = await supabase.from('app_users').upsert([{
+      // 1. Try upsert into app_users with all columns
+      const fullRecord = {
         id: newUser.id,
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
         status: newUser.status,
         specialty: newUser.specialty || 'General',
-        phone: newUser.phone
-      }], { onConflict: 'email' });
+        phone: newUser.phone || null
+      };
 
-      // 2. Also try upsert into users_app (for backward compatibility if that's the table name in Supabase)
-      const { error: errUsersApp } = await supabase.from('users_app').upsert([{
+      const baseRecord = {
         id: newUser.id,
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
-        status: newUser.status,
-        specialty: newUser.specialty || 'General',
-        phone: newUser.phone
-      }], { onConflict: 'email' });
+        status: newUser.status
+      };
+
+      let { error: errAppUsers } = await supabase.from('app_users').upsert([fullRecord], { onConflict: 'email' });
+
+      // If failed due to missing column (PGRST204), retry with base fields
+      if (errAppUsers?.code === 'PGRST204' || errAppUsers?.message?.includes('column')) {
+        const retryRes = await supabase.from('app_users').upsert([baseRecord], { onConflict: 'email' });
+        errAppUsers = retryRes.error;
+      }
+
+      // 2. Also try users_app if app_users failed
+      let errUsersApp = null;
+      if (errAppUsers) {
+        let res2 = await supabase.from('users_app').upsert([fullRecord], { onConflict: 'email' });
+        if (res2.error?.code === 'PGRST204' || res2.error?.message?.includes('column')) {
+          res2 = await supabase.from('users_app').upsert([baseRecord], { onConflict: 'email' });
+        }
+        errUsersApp = res2.error;
+      }
 
       // If at least one of them succeeded, we are good!
       if (!errAppUsers || !errUsersApp) {
         return { success: true };
       }
 
-      // If both failed with PGRST125 (table doesn't exist yet in Supabase)
       const errCode = errAppUsers?.code || errUsersApp?.code;
       const errMsg = errAppUsers?.message || errUsersApp?.message;
       
@@ -1339,7 +1353,7 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (errCode === 'PGRST125' || errMsg?.includes('Invalid path specified in request URL')) {
         return {
           success: false,
-          error: `Error de Supabase (PGRST125): La tabla de usuarios ('app_users' / 'users_app') aún no ha sido creada en tu base de datos de Supabase. Abre el SQL Editor de tu panel de Supabase y ejecuta el script 'supabase_schema.sql'.`
+          error: `Error de Supabase (PGRST125): La tabla 'app_users' aún no existe en Supabase. Ejecuta el Script SQL en tu panel.`
         };
       }
 
@@ -1370,7 +1384,7 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const syncAllUsersToSupabase = async (): Promise<{ success: boolean; count: number; error?: string }> => {
     try {
-      const recordsToInsert = users.map(u => ({
+      const fullRecords = users.map(u => ({
         id: u.id,
         name: u.name,
         email: u.email,
@@ -1380,10 +1394,27 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         phone: u.phone || null
       }));
 
-      // Try app_users
-      const { error: err1 } = await supabase.from('app_users').upsert(recordsToInsert, { onConflict: 'email' });
+      const baseRecords = users.map(u => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        status: u.status
+      }));
+
+      // Try full records first on app_users
+      let { error: err1 } = await supabase.from('app_users').upsert(fullRecords, { onConflict: 'email' });
+      if (err1?.code === 'PGRST204' || err1?.message?.includes('column')) {
+        const retry = await supabase.from('app_users').upsert(baseRecords, { onConflict: 'email' });
+        err1 = retry.error;
+      }
+
       // Also try users_app
-      const { error: err2 } = await supabase.from('users_app').upsert(recordsToInsert, { onConflict: 'email' });
+      let { error: err2 } = await supabase.from('users_app').upsert(fullRecords, { onConflict: 'email' });
+      if (err2?.code === 'PGRST204' || err2?.message?.includes('column')) {
+        const retry = await supabase.from('users_app').upsert(baseRecords, { onConflict: 'email' });
+        err2 = retry.error;
+      }
 
       if (!err1 || !err2) {
         return { success: true, count: users.length };
