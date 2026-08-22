@@ -208,9 +208,19 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     const fetchSupabaseData = async () => {
       try {
-        // 1. Fetch Users
-        const { data: dbUsers, error: errUsers } = await supabase.from('app_users').select('*');
-        if (!errUsers && dbUsers && dbUsers.length > 0) {
+        // 1. Fetch Users (supports app_users and users_app)
+        let dbUsers: any[] | null = null;
+        const { data: uData1, error: errU1 } = await supabase.from('app_users').select('*');
+        if (!errU1 && uData1 && uData1.length > 0) {
+          dbUsers = uData1;
+        } else {
+          const { data: uData2, error: errU2 } = await supabase.from('users_app').select('*');
+          if (!errU2 && uData2 && uData2.length > 0) {
+            dbUsers = uData2;
+          }
+        }
+
+        if (dbUsers && dbUsers.length > 0) {
           const parsedUsers: User[] = dbUsers.map(row => ({
             id: row.id,
             name: row.name,
@@ -1293,7 +1303,7 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     try {
       // 1. Try upsert into app_users
-      const { error: fullError } = await supabase.from('app_users').upsert([{
+      const { error: errAppUsers } = await supabase.from('app_users').upsert([{
         id: newUser.id,
         name: newUser.name,
         email: newUser.email,
@@ -1303,30 +1313,39 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         phone: newUser.phone
       }], { onConflict: 'email' });
 
-      if (fullError) {
-        console.warn('First insert attempt notice:', fullError.message);
-        
-        // 2. Retry with minimal standard columns if schema differs
-        await supabase.from('app_users').upsert([{
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role,
-          specialty: newUser.specialty || 'General'
-        }], { onConflict: 'email' });
+      // 2. Also try upsert into users_app (for backward compatibility if that's the table name in Supabase)
+      const { error: errUsersApp } = await supabase.from('users_app').upsert([{
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        status: newUser.status,
+        specialty: newUser.specialty || 'General',
+        phone: newUser.phone
+      }], { onConflict: 'email' });
+
+      // If at least one of them succeeded, we are good!
+      if (!errAppUsers || !errUsersApp) {
+        return { success: true };
       }
 
-      // 3. Also sync to profiles table
-      try {
-        await supabase.from('profiles').upsert([{
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role
-        }], { onConflict: 'email' });
-      } catch {}
+      // If both failed with PGRST125 (table doesn't exist yet in Supabase)
+      const errCode = errAppUsers?.code || errUsersApp?.code;
+      const errMsg = errAppUsers?.message || errUsersApp?.message;
+      
+      console.warn('Supabase insert notice:', { errAppUsers, errUsersApp });
 
-      return { success: true };
+      if (errCode === 'PGRST125' || errMsg?.includes('Invalid path specified in request URL')) {
+        return {
+          success: false,
+          error: `Error de Supabase (PGRST125): La tabla de usuarios ('app_users' / 'users_app') aún no ha sido creada en tu base de datos de Supabase. Abre el SQL Editor de tu panel de Supabase y ejecuta el script 'supabase_schema.sql'.`
+        };
+      }
+
+      return {
+        success: false,
+        error: `Error al guardar en Supabase (${errCode || 'DESCONOCIDO'}): ${errMsg || 'Error de conexión'}`
+      };
     } catch (e: any) {
       console.error('Supabase exception app_users:', e);
       return { success: false, error: e?.message || 'Error de conexión con Supabase' };
@@ -1342,6 +1361,7 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     try {
       await supabase.from('app_users').update({ status: newStatus }).eq('id', userId);
+      await supabase.from('users_app').update({ status: newStatus }).eq('id', userId);
     } catch (e) {
       console.error('Supabase update status exception:', e);
     }

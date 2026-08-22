@@ -1,16 +1,41 @@
 -- =========================================================
--- SUPABASE DATABASE INITIALIZATION SCRIPT FOR TSR TALLER DIESEL
--- Project: tsrsonora@appdesignsoftware.com's Project
--- Project ID: oejrrmtnluefhttqnutn
--- Execute this script in your Supabase SQL Editor:
--- https://supabase.com/dashboard/project/oejrrmtnluefhttqnutn/sql/new
+-- SCRIPT DE INICIALIZACIÓN SQL COMPLETO PARA SUPABASE
+-- Sistema: TSR TALLER DIESEL (Tractoservices and Diesel Parts)
+-- Proyecto Supabase: oejrrmtnluefhttqnutn
+-- Enlace SQL Editor: https://supabase.com/dashboard/project/oejrrmtnluefhttqnutn/sql/new
 -- =========================================================
 
--- Enable UUID extension if needed
+-- 0. Habilitar extensión UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ---------------------------------------------------------
--- 1. SERVICE ORDERS (Ordenes de Servicio)
+-- 1. TABLA: app_users (Usuarios y Personal del Taller)
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.app_users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    role TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'activo',
+    specialty TEXT DEFAULT 'General',
+    phone TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Tabla alias/espejo users_app para compatibilidad total
+CREATE TABLE IF NOT EXISTS public.users_app (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    role TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'activo',
+    specialty TEXT DEFAULT 'General',
+    phone TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ---------------------------------------------------------
+-- 2. TABLA: service_orders (Órdenes de Servicio de Taller)
 -- ---------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.service_orders (
     id TEXT PRIMARY KEY,
@@ -36,17 +61,19 @@ CREATE TABLE IF NOT EXISTS public.service_orders (
 );
 
 -- ---------------------------------------------------------
--- 2. INVENTORY ITEMS (Refacciones e Inventario)
+-- 3. TABLA: inventory_items (Inventario y Refacciones Diésel)
 -- ---------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.inventory_items (
     id TEXT PRIMARY KEY,
     code TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     category TEXT NOT NULL,
+    subcategory TEXT,
     brand TEXT NOT NULL,
     cost_price NUMERIC(12,2) NOT NULL DEFAULT 0.00,
     sale_price NUMERIC(12,2) NOT NULL DEFAULT 0.00,
     engine_applications TEXT NOT NULL,
+    equivalences JSONB DEFAULT '[]'::jsonb,
     stock INT NOT NULL DEFAULT 0,
     min_stock INT NOT NULL DEFAULT 0,
     unit TEXT DEFAULT 'pz',
@@ -54,7 +81,7 @@ CREATE TABLE IF NOT EXISTS public.inventory_items (
 );
 
 -- ---------------------------------------------------------
--- 3. WAREHOUSE REQUESTS (Solicitudes de Almacén)
+-- 4. TABLA: warehouse_requests (Vales y Solicitudes de Almacén)
 -- ---------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.warehouse_requests (
     id TEXT PRIMARY KEY,
@@ -69,7 +96,7 @@ CREATE TABLE IF NOT EXISTS public.warehouse_requests (
 );
 
 -- ---------------------------------------------------------
--- 4. POS RECEIPTS (Ventas de Mostrador)
+-- 5. TABLA: pos_receipts (Ventas de Mostrador / Punto de Venta)
 -- ---------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.pos_receipts (
     id TEXT PRIMARY KEY,
@@ -84,7 +111,7 @@ CREATE TABLE IF NOT EXISTS public.pos_receipts (
 );
 
 -- ---------------------------------------------------------
--- 5. EXPENSES (Gastos Operativos)
+-- 6. TABLA: expenses (Gastos y Egresos Operativos)
 -- ---------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.expenses (
     id TEXT PRIMARY KEY,
@@ -97,21 +124,7 @@ CREATE TABLE IF NOT EXISTS public.expenses (
 );
 
 -- ---------------------------------------------------------
--- 6. USERS APP (Personal y Usuarios)
--- ---------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.users_app (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    role TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'activo',
-    specialty TEXT,
-    phone TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- ---------------------------------------------------------
--- 7. CASH CUTS (Cortes de Caja)
+-- 7. TABLA: cash_cuts (Cortes de Caja)
 -- ---------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.cash_cuts (
     id TEXT PRIMARY KEY,
@@ -130,27 +143,254 @@ CREATE TABLE IF NOT EXISTS public.cash_cuts (
 );
 
 -- ---------------------------------------------------------
--- ENABLE ROW LEVEL SECURITY (RLS) & PUBLIC ACCESS POLICIES
+-- 8. TABLA: appointments (Citas y Recepción Programada)
 -- ---------------------------------------------------------
-ALTER TABLE public.service_orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.inventory_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.warehouse_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.pos_receipts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.users_app ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.cash_cuts ENABLE ROW LEVEL SECURITY;
+CREATE TABLE IF NOT EXISTS public.appointments (
+    id TEXT PRIMARY KEY,
+    client_name TEXT NOT NULL,
+    client_phone TEXT NOT NULL,
+    client_email TEXT,
+    vehicle_brand_model TEXT NOT NULL,
+    vehicle_year TEXT,
+    vehicle_plates TEXT NOT NULL,
+    service_type TEXT NOT NULL,
+    service_reason TEXT NOT NULL,
+    preferred_date TEXT NOT NULL,
+    preferred_time TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Confirmada',
+    source TEXT NOT NULL DEFAULT 'WhatsApp',
+    bay_assigned TEXT,
+    converted_order_id TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-CREATE POLICY "Allow public read/write on service_orders" ON public.service_orders FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read/write on inventory_items" ON public.inventory_items FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read/write on warehouse_requests" ON public.warehouse_requests FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read/write on pos_receipts" ON public.pos_receipts FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read/write on expenses" ON public.expenses FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read/write on users_app" ON public.users_app FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read/write on cash_cuts" ON public.cash_cuts FOR ALL USING (true) WITH CHECK (true);
+-- ---------------------------------------------------------
+-- 9. TABLA: billing_orders (Caja y Cobranza)
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.billing_orders (
+    id TEXT PRIMARY KEY,
+    source_type TEXT NOT NULL,
+    reference_id TEXT NOT NULL,
+    client_name TEXT NOT NULL,
+    client_email TEXT,
+    client_rfc TEXT,
+    subtotal NUMERIC(12,2) NOT NULL,
+    tax_iva NUMERIC(12,2) NOT NULL,
+    total NUMERIC(12,2) NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Pendiente de Pago',
+    payment_method TEXT,
+    paid_at TEXT,
+    invoice_id TEXT,
+    dispatched_in_warehouse BOOLEAN DEFAULT false,
+    warehouse_voucher_number TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    items_summary TEXT
+);
 
 -- ---------------------------------------------------------
--- SEED INITIAL DATA (Datos Iniciales del Sistema)
+-- 10. TABLA: invoices (Facturas CFDI 4.0 Timbradas)
 -- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.invoices (
+    id TEXT PRIMARY KEY,
+    folio TEXT UNIQUE NOT NULL,
+    uuid TEXT UNIQUE NOT NULL,
+    order_reference_id TEXT NOT NULL,
+    client_name TEXT NOT NULL,
+    rfc TEXT NOT NULL,
+    regimen_fiscal TEXT NOT NULL,
+    uso_cfdi TEXT NOT NULL,
+    email TEXT NOT NULL,
+    subtotal NUMERIC(12,2) NOT NULL,
+    tax_iva NUMERIC(12,2) NOT NULL,
+    total NUMERIC(12,2) NOT NULL,
+    payment_method TEXT NOT NULL,
+    payment_form TEXT NOT NULL,
+    date TEXT NOT NULL,
+    xml_data TEXT,
+    sent_by_email BOOLEAN DEFAULT false,
+    email_sent_at TEXT
+);
+
+-- ---------------------------------------------------------
+-- 11. TABLA: tools (Herramientas y Equipos de Diagnóstico)
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.tools (
+    id TEXT PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    brand TEXT NOT NULL,
+    serial_number TEXT,
+    location TEXT NOT NULL,
+    condition TEXT NOT NULL DEFAULT 'Excelente',
+    status TEXT NOT NULL DEFAULT 'Disponible',
+    current_technician_id TEXT,
+    current_technician_name TEXT,
+    assigned_date TEXT,
+    purchase_date TEXT,
+    cost NUMERIC(12,2) DEFAULT 0.00,
+    notes TEXT
+);
+
+-- ---------------------------------------------------------
+-- 12. TABLA: tool_logs (Historial de Préstamos de Herramienta)
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.tool_logs (
+    id TEXT PRIMARY KEY,
+    tool_id TEXT NOT NULL,
+    tool_code TEXT NOT NULL,
+    tool_name TEXT NOT NULL,
+    technician_id TEXT NOT NULL,
+    technician_name TEXT NOT NULL,
+    assigned_date TEXT NOT NULL,
+    return_date TEXT,
+    status TEXT NOT NULL DEFAULT 'Activa',
+    return_condition TEXT,
+    responsibility_signed BOOLEAN DEFAULT true,
+    observations TEXT
+);
+
+-- ---------------------------------------------------------
+-- 13. TABLA: purchase_orders (Órdenes de Compra y Proveedores)
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.purchase_orders (
+    id TEXT PRIMARY KEY,
+    date TEXT NOT NULL,
+    supplier_id TEXT NOT NULL,
+    supplier_name TEXT NOT NULL,
+    supplier_email TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Enviada a Proveedor',
+    items JSONB NOT NULL DEFAULT '[]'::jsonb,
+    subtotal NUMERIC(12,2) NOT NULL,
+    tax_iva NUMERIC(12,2) NOT NULL,
+    total NUMERIC(12,2) NOT NULL,
+    payment_method TEXT NOT NULL,
+    bank_account_id TEXT,
+    is_direct_expense BOOLEAN DEFAULT false,
+    expense_category TEXT,
+    notes TEXT,
+    authorized_by TEXT,
+    authorized_at TEXT,
+    sent_at TEXT,
+    received_at TEXT,
+    created_by_role TEXT
+);
+
+-- ---------------------------------------------------------
+-- 14. TABLA: client_contacts (Directorio Clientes & Flotas)
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.client_contacts (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    commercial_name TEXT,
+    rfc TEXT,
+    regimen_fiscal TEXT,
+    uso_cfdi TEXT,
+    email TEXT,
+    phone TEXT,
+    address TEXT,
+    credit_days INT DEFAULT 0,
+    credit_limit NUMERIC(12,2) DEFAULT 0.00,
+    vehicles JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ---------------------------------------------------------
+-- 15. TABLA: supplier_contacts (Directorio Proveedores Diésel)
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.supplier_contacts (
+    id TEXT PRIMARY KEY,
+    company_name TEXT NOT NULL,
+    contact_person TEXT,
+    rfc TEXT,
+    email TEXT,
+    phone TEXT,
+    address TEXT,
+    category TEXT NOT NULL,
+    credit_days INT DEFAULT 0,
+    bank_name TEXT,
+    bank_account_clabe TEXT,
+    supplies_list JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ---------------------------------------------------------
+-- 16. TABLA: bank_accounts (Cuentas Bancarias y Caja Fuerte)
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.bank_accounts (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    bank_name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    account_number TEXT,
+    clabe TEXT,
+    currency TEXT DEFAULT 'MXN',
+    current_balance NUMERIC(12,2) DEFAULT 0.00,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ---------------------------------------------------------
+-- 17. TABLA: financial_movements (Flujo Bancario y Movimientos)
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.financial_movements (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL,
+    account_name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    concept TEXT NOT NULL,
+    category TEXT NOT NULL,
+    amount NUMERIC(12,2) NOT NULL,
+    date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    reference TEXT,
+    related_order_id TEXT,
+    related_purchase_id TEXT
+);
+
+-- =========================================================
+-- POLÍTICAS DE ACCESO (ROW LEVEL SECURITY - RLS)
+-- Permite lectura y escritura transparente para la app cliente
+-- =========================================================
+DO $$ 
+DECLARE
+    tbl text;
+    tables text[] := ARRAY[
+        'app_users', 'users_app', 'service_orders', 'inventory_items',
+        'warehouse_requests', 'pos_receipts', 'expenses', 'cash_cuts',
+        'appointments', 'billing_orders', 'invoices', 'tools', 'tool_logs',
+        'purchase_orders', 'client_contacts', 'supplier_contacts',
+        'bank_accounts', 'financial_movements'
+    ];
+BEGIN
+    FOREACH tbl IN ARRAY tables LOOP
+        EXECUTE format('ALTER TABLE IF EXISTS public.%I ENABLE ROW LEVEL SECURITY;', tbl);
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I;', 'Allow_Public_Full_Access_' || tbl, tbl);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR ALL USING (true) WITH CHECK (true);', 'Allow_Public_Full_Access_' || tbl, tbl);
+    END LOOP;
+END $$;
+
+-- ---------------------------------------------------------
+-- SEED DE DATOS INICIALES (Usuarios y Catálogos de Demostración)
+-- ---------------------------------------------------------
+INSERT INTO public.app_users (id, name, email, role, status, specialty, phone)
+VALUES
+('usr-1', 'Roberto Garza', 'rgarza@tsr.com', 'direccion', 'activo', 'Administración General', '662-100-2001'),
+('usr-2', 'Carlos Mendoza', 'cmendoza@tsr.com', 'asesor', 'activo', 'Diagnóstico Pesado', '662-100-2002'),
+('usr-3', 'Ing. Miguel Ángel Solís', 'msolis@tsr.com', 'tecnico', 'activo', 'Sistemas Cummins & SCR', '662-100-2003'),
+('usr-4', 'Jorge Luis Torres', 'jtorres@tsr.com', 'tecnico', 'activo', 'Detroit DD15 & Transmisiones', '662-100-2004'),
+('usr-5', 'Esteban Peralta', 'eperalta@tsr.com', 'almacen', 'activo', 'Gestión de Partes', '662-100-2005'),
+('usr-6', 'Laura Elena Ruiz', 'lruiz@tsr.com', 'contabilidad', 'activo', 'Atención al Cliente y Facturación', '662-100-2006')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.users_app (id, name, email, role, status, specialty, phone)
+VALUES
+('usr-1', 'Roberto Garza', 'rgarza@tsr.com', 'direccion', 'activo', 'Administración General', '662-100-2001'),
+('usr-2', 'Carlos Mendoza', 'cmendoza@tsr.com', 'asesor', 'activo', 'Diagnóstico Pesado', '662-100-2002'),
+('usr-3', 'Ing. Miguel Ángel Solís', 'msolis@tsr.com', 'tecnico', 'activo', 'Sistemas Cummins & SCR', '662-100-2003'),
+('usr-4', 'Jorge Luis Torres', 'jtorres@tsr.com', 'tecnico', 'activo', 'Detroit DD15 & Transmisiones', '662-100-2004'),
+('usr-5', 'Esteban Peralta', 'eperalta@tsr.com', 'almacen', 'activo', 'Gestión de Partes', '662-100-2005'),
+('usr-6', 'Laura Elena Ruiz', 'lruiz@tsr.com', 'contabilidad', 'activo', 'Atención al Cliente y Facturación', '662-100-2006')
+ON CONFLICT (id) DO NOTHING;
+
 INSERT INTO public.inventory_items (id, code, name, category, brand, cost_price, sale_price, engine_applications, stock, min_stock, unit)
 VALUES
 ('inv-101', 'FIL-CUM-ISX', 'Filtro de Aceite LF14000NN', 'Filtros', 'Fleetguard', 450.00, 780.00, 'Cummins ISX / X15', 18, 5, 'pz'),
@@ -159,57 +399,4 @@ VALUES
 ('inv-104', 'TUR-GAR-HE400', 'Turbocargador VGT Holset HE400VG', 'Turbos', 'Holset', 14500.00, 21900.00, 'Cummins ISX15 / QSX15', 2, 1, 'pz'),
 ('inv-105', 'VAL-EGR-MAXX', 'Válvula EGR MaxxForce 13', 'Motor', 'Navistar', 4800.00, 7100.00, 'International MaxxForce 11/13', 3, 1, 'pz'),
 ('inv-106', 'BOM-DEF-BOSCH', 'Bomba de Urea Doser DEF Denoxtronic', 'Sistemas SCR/Emisiones', 'Bosch', 5500.00, 8400.00, 'Universal Kenworth/Freightliner', 5, 2, 'pz')
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO public.users_app (id, name, email, role, status, specialty, phone)
-VALUES
-('usr-1', 'Roberto Garza', 'rgarza@tsr.com', 'Dirección Administrativa', 'activo', 'Administración General', '662-100-2001'),
-('usr-2', 'Carlos Mendoza', 'cmendoza@tsr.com', 'Jefe de Taller', 'activo', 'Diagnóstico Pesado', '662-100-2002'),
-('usr-3', 'Ing. Miguel Ángel Solís', 'msolis@tsr.com', 'Técnico Especialista', 'activo', 'Sistemas Cummins & SCR', '662-100-2003'),
-('usr-4', 'Jorge Luis Torres', 'jtorres@tsr.com', 'Técnico Especialista', 'activo', 'Detroit DD15 & Transmisiones', '662-100-2004'),
-('usr-5', 'Esteban Peralta', 'eperalta@tsr.com', 'Almacén de Refacciones', 'activo', 'Gestión de Partes', '662-100-2005'),
-('usr-6', 'Laura Elena Ruiz', 'lruiz@tsr.com', 'Mostrador y Facturación', 'activo', 'Atención al Cliente', '662-100-2006')
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO public.service_orders (
-    id, tracking_token, vehicle, fault_reason, checklist, assigned_technician_id, assigned_technician_name,
-    status, parts, labor, evidences, created_at, updated_at, estimated_cost, client_approved, payment_status
-)
-VALUES
-(
-    'OS-9283',
-    'OS-9283-TRK',
-    '{"vin": "3AKJH35D8KS921049", "plates": "88-AA-1B", "brand": "Freightliner", "model": "Cascadia 2021", "engine": "Detroit DD15", "mileage": "412,500 KM", "ownerName": "Transportes Flotil SA de CV", "ownerPhone": "662-555-0192"}'::jsonb,
-    'Perdida severa de potencia bajo carga y código de falla de presión DEF elevado (Regeneración DPF bloqueada).',
-    '[{"id": "chk-1", "label": "Presión del sistema DEF en línea", "checked": true}, {"id": "chk-2", "label": "Escaneo de códigos OBD / J1939", "checked": true}, {"id": "chk-3", "label": "Inspección visual de fugas de refrigerante/aceite", "checked": false}]'::jsonb,
-    'usr-3',
-    'Ing. Miguel Ángel Solís',
-    'En Proceso',
-    '[{"id": "p-1", "code": "SEN-NOX-DD13", "name": "Sensor NOx Salida DD13/DD15", "quantity": 1, "unitPrice": 3200, "status": "aprobado_cliente"}]'::jsonb,
-    '[{"id": "l-1", "description": "Diagnóstico escáner J1939 y cambio de sensor NOx", "hours": 3.5, "hourlyRate": 650, "status": "aprobado_cliente"}]'::jsonb,
-    '[{"id": "ev-1", "type": "foto", "url": "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=600&q=80", "description": "Léctura de contrapresión DPF con sensor obstruido.", "date": "2026-03-30 09:15"}]'::jsonb,
-    '2026-03-30 08:30',
-    '2026-03-30 11:20',
-    5475.00,
-    true,
-    'pendiente'
-),
-(
-    'OS-9284',
-    'OS-9284-TRK',
-    '{"vin": "1XKDP49X7KJ384920", "plates": "32-BB-9C", "brand": "Kenworth", "model": "T680 2020", "engine": "Cummins ISX15", "mileage": "520,100 KM", "ownerName": "Logística del Norte", "ownerPhone": "662-555-8833"}'::jsonb,
-    'Mantenimiento preventivo B de 50,000 KM y revisión de fuga de aceite en retén frontal.',
-    '[{"id": "chk-1", "label": "Cambio de filtro de aceite y combustible", "checked": true}, {"id": "chk-2", "label": "Inspección de bandas y poleas", "checked": true}]'::jsonb,
-    'usr-4',
-    'Jorge Luis Torres',
-    'Esperando Refacción',
-    '[{"id": "p-2", "code": "FIL-CUM-ISX", "name": "Filtro de Aceite LF14000NN", "quantity": 2, "unitPrice": 780, "status": "solicitado"}]'::jsonb,
-    '[{"id": "l-2", "description": "Mantenimiento preventivo general e inspección de sellos", "hours": 4, "hourlyRate": 600, "status": "pendiente_aprobacion"}]'::jsonb,
-    '[]'::jsonb,
-    '2026-03-30 10:10',
-    '2026-03-30 10:45',
-    3960.00,
-    null,
-    'pendiente'
-)
 ON CONFLICT (id) DO NOTHING;

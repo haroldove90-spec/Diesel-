@@ -58,6 +58,8 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
 
   // New User Form States
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showSqlModal, setShowSqlModal] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<RoleType>('tecnico');
@@ -117,39 +119,42 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
     setDbTestStatus({ testing: true });
     try {
       // 1. Try querying app_users
-      const { data, error } = await supabase.from('app_users').select('id, name, email').limit(5);
-      if (!error) {
+      const { data: d1, error: err1 } = await supabase.from('app_users').select('id, name, email').limit(5);
+      if (!err1) {
         setDbTestStatus({
           testing: false,
           isOk: true,
-          result: `¡Conexión Exitosa con Supabase! Tabla 'app_users' sincronizada (${data?.length || 0} registros encontrados).`
+          result: `¡Conexión Exitosa con Supabase! Tabla 'app_users' sincronizada (${d1?.length || 0} registros encontrados).`
         });
         return;
       }
 
-      // If app_users failed with PGRST125, check if public schema is exposed
-      const testFetch = await fetch('https://oejrrmtnluefhttqnutn.supabase.co/rest/v1/', {
-        headers: {
-          apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lanJybXRubHVlZmh0dHFudXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1NTQyOTMsImV4cCI6MjEwMjEzMDI5M30.Tsyw3Oop55LzVocGRG-fqCcXJ-LAxjQtxZ2atFD-IEE',
-          Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lanJybXRubHVlZmh0dHFudXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1NTQyOTMsImV4cCI6MjEwMjEzMDI5M30.Tsyw3Oop55LzVocGRG-fqCcXJ-LAxjQtxZ2atFD-IEE'
-        }
-      });
-
-      if (testFetch.ok) {
-        const spec = await testFetch.json();
-        const availableTables = Object.keys(spec?.definitions || {}).join(', ') || 'Ninguna tabla expuesta aún';
+      // 2. Try users_app
+      const { data: d2, error: err2 } = await supabase.from('users_app').select('id, name, email').limit(5);
+      if (!err2) {
         setDbTestStatus({
           testing: false,
-          isOk: false,
-          result: `API activa pero esquema 'public' no expuesto en Data API. Tablas detectadas en API: [${availableTables}].`
+          isOk: true,
+          result: `¡Conexión Exitosa con Supabase! Tabla 'users_app' sincronizada (${d2?.length || 0} registros encontrados).`
         });
-      } else {
-        setDbTestStatus({
-          testing: false,
-          isOk: false,
-          result: `Error (${error.code || 'PGRST125'}): El esquema 'public' requiere activación en Supabase > Project Settings > Data API > Exposed schemas.`
-        });
+        return;
       }
+
+      // If both failed with PGRST125
+      if (err1?.code === 'PGRST125' || err2?.code === 'PGRST125') {
+        setDbTestStatus({
+          testing: false,
+          isOk: false,
+          result: `Aviso (PGRST125): Las tablas de base de datos no existen aún en Supabase. Abre el 'Script SQL' de aquí abajo y ejecútalo en el SQL Editor de tu panel de Supabase.`
+        });
+        return;
+      }
+
+      setDbTestStatus({
+        testing: false,
+        isOk: false,
+        result: `Aviso Supabase: ${err1?.message || err2?.message || 'Revisa tus credenciales en .env'}`
+      });
     } catch (err: any) {
       setDbTestStatus({
         testing: false,
@@ -461,6 +466,15 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
 
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setShowSqlModal(true)}
+                className="flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 px-3 py-2 text-xs font-bold uppercase rounded-md transition-colors cursor-pointer border border-blue-200"
+                title="Ver y Copiar Script SQL para Supabase"
+              >
+                <Database className="w-3.5 h-3.5 text-blue-700" />
+                <span>Script SQL Supabase</span>
+              </button>
+
+              <button
                 onClick={handleTestSupabase}
                 disabled={dbTestStatus.testing}
                 className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 text-xs font-bold uppercase rounded-md transition-colors cursor-pointer border border-slate-300"
@@ -650,6 +664,239 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* SQL Script / Supabase Configuration Modal */}
+          {showSqlModal && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white border border-slate-200 p-6 rounded-xl max-w-2xl w-full space-y-4 shadow-2xl text-slate-900 max-h-[90vh] flex flex-col">
+                <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Database className="w-5 h-5 text-blue-700" />
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-wider text-[#002855]">
+                        Script SQL y Solución de Error PGRST125
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Cómo activar las tablas en tu proyecto de Supabase en 30 segundos
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowSqlModal(false)} className="text-slate-400 hover:text-slate-700">✕</button>
+                </div>
+
+                <div className="overflow-y-auto space-y-4 text-xs pr-1">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1.5 text-amber-900">
+                    <div className="font-bold flex items-center gap-1.5 text-amber-950">
+                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      <span>¿Por qué apareció "PGRST125: Invalid path specified in request URL"?</span>
+                    </div>
+                    <p className="text-[11px] leading-relaxed">
+                      El error <strong>PGRST125</strong> en Supabase ocurre porque la tabla <code>app_users</code> (y las demás tablas del sistema) aún no han sido creadas en tu base de datos de Supabase. Supabase no las crea automáticamente hasta que ejecutas el script SQL.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-bold uppercase text-[11px] text-slate-700">
+                      Instrucciones de Solución (3 pasos rápidos):
+                    </h4>
+                    <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <li>
+                        Copia el <strong>Script SQL</strong> con el botón azul de abajo.
+                      </li>
+                      <li>
+                        Abre el <a href="https://supabase.com/dashboard/project/oejrrmtnluefhttqnutn/sql/new" target="_blank" rel="noreferrer" className="text-blue-700 font-bold underline hover:text-blue-900">SQL Editor de Supabase (haz clic aquí)</a>.
+                      </li>
+                      <li>
+                        Pega el código en el editor y presiona <strong>RUN</strong> (o Ctrl + Enter). ¡Listo! Todas las tablas y permisos se crearán al instante.
+                      </li>
+                    </ol>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[11px] uppercase text-slate-700">
+                        Código SQL para Crear Tablas (supabase_schema.sql):
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const sqlCode = `-- TABLAS SUPABASE PARA TSR SONORA
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE IF NOT EXISTS public.app_users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    role TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'activo',
+    specialty TEXT DEFAULT 'General',
+    phone TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.users_app (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    role TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'activo',
+    specialty TEXT DEFAULT 'General',
+    phone TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.service_orders (
+    id TEXT PRIMARY KEY,
+    tracking_token TEXT UNIQUE NOT NULL,
+    vehicle JSONB NOT NULL,
+    fault_reason TEXT NOT NULL,
+    checklist JSONB NOT NULL DEFAULT '[]'::jsonb,
+    assigned_technician_id TEXT,
+    assigned_technician_name TEXT,
+    status TEXT NOT NULL DEFAULT 'Diagnóstico',
+    parts JSONB NOT NULL DEFAULT '[]'::jsonb,
+    labor JSONB NOT NULL DEFAULT '[]'::jsonb,
+    evidences JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    estimated_cost NUMERIC(12,2) DEFAULT 0.00,
+    client_approved BOOLEAN,
+    payment_status TEXT DEFAULT 'pendiente',
+    payment_method TEXT,
+    warranty_details TEXT,
+    tech_notes TEXT,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.inventory_items (
+    id TEXT PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    subcategory TEXT,
+    brand TEXT NOT NULL,
+    cost_price NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    sale_price NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    engine_applications TEXT NOT NULL,
+    stock INT NOT NULL DEFAULT 0,
+    min_stock INT NOT NULL DEFAULT 0,
+    unit TEXT DEFAULT 'pz',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.warehouse_requests (
+    id TEXT PRIMARY KEY,
+    os_id TEXT NOT NULL,
+    vehicle_info TEXT NOT NULL,
+    technician_name TEXT NOT NULL,
+    item_code TEXT NOT NULL,
+    item_name TEXT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    status TEXT NOT NULL DEFAULT 'pendiente',
+    requested_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.pos_receipts (
+    id TEXT PRIMARY KEY,
+    folio TEXT UNIQUE NOT NULL,
+    date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    items JSONB NOT NULL,
+    subtotal NUMERIC(12,2) NOT NULL,
+    tax NUMERIC(12,2) NOT NULL,
+    total NUMERIC(12,2) NOT NULL,
+    payment_method TEXT NOT NULL,
+    client_name TEXT DEFAULT 'Cliente de Mostrador'
+);
+
+CREATE TABLE IF NOT EXISTS public.expenses (
+    id TEXT PRIMARY KEY,
+    date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    concept TEXT NOT NULL,
+    category TEXT NOT NULL,
+    amount NUMERIC(12,2) NOT NULL,
+    supplier TEXT,
+    receipt_number TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.cash_cuts (
+    id TEXT PRIMARY KEY,
+    date DATE DEFAULT CURRENT_DATE,
+    initial_cash NUMERIC(12,2) NOT NULL DEFAULT 2500.00,
+    cash_sales NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    card_sales NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    transfer_sales NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    total_income NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    expenses_total NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    calculated_cash NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    actual_cash NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    difference NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    status TEXT NOT NULL DEFAULT 'abierto',
+    notes TEXT
+);
+
+DO $$ 
+DECLARE
+    tbl text;
+    tables text[] := ARRAY['app_users', 'users_app', 'service_orders', 'inventory_items', 'warehouse_requests', 'pos_receipts', 'expenses', 'cash_cuts'];
+BEGIN
+    FOREACH tbl IN ARRAY tables LOOP
+        EXECUTE format('ALTER TABLE IF EXISTS public.%I ENABLE ROW LEVEL SECURITY;', tbl);
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I;', 'Allow_Public_Full_Access_' || tbl, tbl);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR ALL USING (true) WITH CHECK (true);', 'Allow_Public_Full_Access_' || tbl, tbl);
+    END LOOP;
+END $$;
+`;
+                          navigator.clipboard.writeText(sqlCode);
+                          setCopiedSql(true);
+                          setTimeout(() => setCopiedSql(false), 3000);
+                        }}
+                        className="flex items-center gap-1 text-[10px] font-bold text-blue-700 hover:text-blue-900 bg-blue-50 px-2 py-1 rounded border border-blue-200 cursor-pointer"
+                      >
+                        {copiedSql ? <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedSql ? '¡Copiado!' : 'Copiar SQL'}</span>
+                      </button>
+                    </div>
+
+                    <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg text-[10px] font-mono overflow-x-auto max-h-48 leading-relaxed border border-slate-800">
+{`CREATE TABLE IF NOT EXISTS public.app_users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    role TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'activo',
+    specialty TEXT DEFAULT 'General',
+    phone TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Habilitar permisos RLS:
+ALTER TABLE public.app_users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read/write on app_users" ON public.app_users FOR ALL USING (true) WITH CHECK (true);`}
+                    </pre>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200 flex justify-between items-center gap-2">
+                  <a
+                    href="https://supabase.com/dashboard/project/oejrrmtnluefhttqnutn/sql/new"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow-sm transition-colors"
+                  >
+                    Abrir SQL Editor en Supabase ↗
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowSqlModal(false)}
+                    className="border border-slate-300 px-4 py-2 text-xs font-bold uppercase text-slate-700 hover:text-slate-900 rounded-lg"
+                  >
+                    Cerrar
+                  </button>
+                </div>
               </div>
             </div>
           )}
