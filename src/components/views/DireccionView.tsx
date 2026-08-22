@@ -116,25 +116,45 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
   const handleTestSupabase = async () => {
     setDbTestStatus({ testing: true });
     try {
+      // 1. Try querying app_users
       const { data, error } = await supabase.from('app_users').select('id, name, email').limit(5);
-      if (error) {
+      if (!error) {
+        setDbTestStatus({
+          testing: false,
+          isOk: true,
+          result: `¡Conexión Exitosa con Supabase! Tabla 'app_users' sincronizada (${data?.length || 0} registros encontrados).`
+        });
+        return;
+      }
+
+      // If app_users failed with PGRST125, check if public schema is exposed
+      const testFetch = await fetch('https://oejrrmtnluefhttqnutn.supabase.co/rest/v1/', {
+        headers: {
+          apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lanJybXRubHVlZmh0dHFudXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1NTQyOTMsImV4cCI6MjEwMjEzMDI5M30.Tsyw3Oop55LzVocGRG-fqCcXJ-LAxjQtxZ2atFD-IEE',
+          Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lanJybXRubHVlZmh0dHFudXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1NTQyOTMsImV4cCI6MjEwMjEzMDI5M30.Tsyw3Oop55LzVocGRG-fqCcXJ-LAxjQtxZ2atFD-IEE'
+        }
+      });
+
+      if (testFetch.ok) {
+        const spec = await testFetch.json();
+        const availableTables = Object.keys(spec?.definitions || {}).join(', ') || 'Ninguna tabla expuesta aún';
         setDbTestStatus({
           testing: false,
           isOk: false,
-          result: `Error (${error.code || 'PGRST125'}): ${error.message}`
+          result: `API activa pero esquema 'public' no expuesto en Data API. Tablas detectadas en API: [${availableTables}].`
         });
       } else {
         setDbTestStatus({
           testing: false,
-          isOk: true,
-          result: `Conexión activa con Supabase. Registros en app_users: ${data?.length || 0}`
+          isOk: false,
+          result: `Error (${error.code || 'PGRST125'}): El esquema 'public' requiere activación en Supabase > Project Settings > Data API > Exposed schemas.`
         });
       }
     } catch (err: any) {
       setDbTestStatus({
         testing: false,
         isOk: false,
-        result: `Error de red: ${err?.message || 'No se pudo contactar con Supabase'}`
+        result: `Error de conexión: ${err?.message || 'No se pudo contactar con Supabase'}`
       });
     }
   };
