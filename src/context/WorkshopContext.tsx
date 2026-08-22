@@ -124,6 +124,7 @@ interface WorkshopContextType {
   setCurrentUser: (user: User | null) => void;
   addUser: (user: Omit<User, 'id' | 'status'>) => Promise<{ success: boolean; error?: string }>;
   toggleUserStatus: (userId: string) => void;
+  syncAllUsersToSupabase: () => Promise<{ success: boolean; count: number; error?: string }>;
 }
 
 const WorkshopContext = createContext<WorkshopContextType | undefined>(undefined);
@@ -1367,6 +1368,37 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const syncAllUsersToSupabase = async (): Promise<{ success: boolean; count: number; error?: string }> => {
+    try {
+      const recordsToInsert = users.map(u => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        status: u.status,
+        specialty: u.specialty || 'General',
+        phone: u.phone || null
+      }));
+
+      // Try app_users
+      const { error: err1 } = await supabase.from('app_users').upsert(recordsToInsert, { onConflict: 'email' });
+      // Also try users_app
+      const { error: err2 } = await supabase.from('users_app').upsert(recordsToInsert, { onConflict: 'email' });
+
+      if (!err1 || !err2) {
+        return { success: true, count: users.length };
+      }
+
+      return {
+        success: false,
+        count: 0,
+        error: err1?.message || err2?.message || 'Error al sincronizar con Supabase'
+      };
+    } catch (err: any) {
+      return { success: false, count: 0, error: err?.message || 'Error al conectar con Supabase' };
+    }
+  };
+
   return (
     <WorkshopContext.Provider value={{
       currentRole,
@@ -1427,7 +1459,8 @@ export const WorkshopProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       addExpense,
       users,
       addUser,
-      toggleUserStatus
+      toggleUserStatus,
+      syncAllUsersToSupabase
     }}>
       {children}
     </WorkshopContext.Provider>

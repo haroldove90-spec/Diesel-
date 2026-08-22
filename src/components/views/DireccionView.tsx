@@ -9,7 +9,7 @@ import { FacturacionCajaModule } from '../modules/FacturacionCajaModule';
 import { PosModule } from '../modules/PosModule';
 import { PerfilModule } from '../modules/PerfilModule';
 import { RoleType } from '../../types';
-import { supabase } from '../../lib/supabase';
+import { supabase, getSupabaseCredentials, updateSupabaseCredentials, resetSupabaseCredentials } from '../../lib/supabase';
 import { 
   TrendingUp, 
   Wrench, 
@@ -24,7 +24,12 @@ import {
   RefreshCw,
   CheckCircle,
   AlertCircle,
-  Copy
+  Copy,
+  Settings,
+  Key,
+  Globe,
+  UploadCloud,
+  Check
 } from 'lucide-react';
 
 interface DireccionViewProps {
@@ -42,6 +47,7 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
     closeCashCut, 
     addUser, 
     toggleUserStatus,
+    syncAllUsersToSupabase,
     inventory 
   } = useWorkshop();
 
@@ -59,6 +65,7 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
   // New User Form States
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showSqlModal, setShowSqlModal] = useState(false);
+  const [showConfigModal, setShowConfigModal] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
@@ -66,6 +73,17 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
   const [newUserSpecialty, setNewUserSpecialty] = useState('');
   const [userModalStatus, setUserModalStatus] = useState<{ loading: boolean; error?: string; success?: string }>({ loading: false });
   const [dbTestStatus, setDbTestStatus] = useState<{ testing: boolean; result?: string; isOk?: boolean }>({ testing: false });
+  const [syncStatus, setSyncStatus] = useState<{ syncing: boolean; result?: string; isOk?: boolean }>({ syncing: false });
+
+  // Credentials form state
+  const initialCreds = getSupabaseCredentials();
+  const [configUrl, setConfigUrl] = useState(initialCreds.url);
+  const [configKey, setConfigKey] = useState(initialCreds.anonKey);
+  const [configSaveMsg, setConfigSaveMsg] = useState<{ isOk: boolean; text: string } | null>(null);
+
+  // Extract project ref if any from URL
+  const projectRefMatch = configUrl.match(/https:\/\/([a-z0-9]+)\.supabase\.co/i);
+  const currentProjectId = projectRefMatch ? projectRefMatch[1] : 'oejrrmtnluefhttqnutn';
 
   // Financial calculations from REAL data
   const totalServiceRevenue = orders
@@ -115,6 +133,62 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
     closeCashCut(actual, closeNotesInput || 'Corte finalizado por Dirección.');
   };
 
+  const handleSaveCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!configUrl || !configKey) return;
+    
+    try {
+      updateSupabaseCredentials(configUrl, configKey);
+      setConfigSaveMsg({ isOk: true, text: '¡Credenciales guardadas! Probando conexión...' });
+      
+      // Test immediately
+      const { data, error } = await supabase.from('app_users').select('id').limit(1);
+      if (!error) {
+        setConfigSaveMsg({ isOk: true, text: '¡Conexión exitosa con tu proyecto de Supabase!' });
+      } else if (error.code === 'PGRST125') {
+        setConfigSaveMsg({ isOk: true, text: 'Conectado al proyecto. Aviso: La tabla app_users aún debe crearse con el Script SQL.' });
+      } else {
+        setConfigSaveMsg({ isOk: false, text: `Aviso: ${error.message}` });
+      }
+    } catch (err: any) {
+      setConfigSaveMsg({ isOk: false, text: err?.message || 'Error al conectar' });
+    }
+  };
+
+  const handleResetCredentials = () => {
+    resetSupabaseCredentials();
+    const creds = getSupabaseCredentials();
+    setConfigUrl(creds.url);
+    setConfigKey(creds.anonKey);
+    setConfigSaveMsg({ isOk: true, text: 'Credenciales restablecidas a los valores por defecto.' });
+  };
+
+  const handleSyncAllUsers = async () => {
+    setSyncStatus({ syncing: true });
+    try {
+      const res = await syncAllUsersToSupabase();
+      if (res.success) {
+        setSyncStatus({
+          syncing: false,
+          isOk: true,
+          result: `¡Sincronizados ${res.count} empleados con Supabase correctamente!`
+        });
+      } else {
+        setSyncStatus({
+          syncing: false,
+          isOk: false,
+          result: `No se pudo sincronizar (${res.error}). Asegúrate de haber ejecutado el Script SQL en Supabase.`
+        });
+      }
+    } catch (e: any) {
+      setSyncStatus({
+        syncing: false,
+        isOk: false,
+        result: `Error de sincronización: ${e?.message || 'Error de conexión'}`
+      });
+    }
+  };
+
   const handleTestSupabase = async () => {
     setDbTestStatus({ testing: true });
     try {
@@ -145,7 +219,7 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
         setDbTestStatus({
           testing: false,
           isOk: false,
-          result: `Aviso (PGRST125): Las tablas de base de datos no existen aún en Supabase. Abre el 'Script SQL' de aquí abajo y ejecútalo en el SQL Editor de tu panel de Supabase.`
+          result: `Aviso (PGRST125): La tabla no existe en tu base de datos de Supabase. Abre el 'Script SQL' y ejecútalo en el SQL Editor de tu panel de Supabase.`
         });
         return;
       }
@@ -153,7 +227,7 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
       setDbTestStatus({
         testing: false,
         isOk: false,
-        result: `Aviso Supabase: ${err1?.message || err2?.message || 'Revisa tus credenciales en .env'}`
+        result: `Aviso Supabase: ${err1?.message || err2?.message || 'Revisa tus credenciales en Configurar Supabase'}`
       });
     } catch (err: any) {
       setDbTestStatus({
@@ -190,10 +264,18 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
           setShowAddUserModal(false);
         }, 1200);
       } else {
+        // Even if Supabase sync failed, the user is already saved in local context!
         setUserModalStatus({
           loading: false,
-          error: result.error || 'No se pudo guardar en Supabase. Revisa el estado de la API.'
+          success: '✅ Empleado guardado en el sistema local. (Aviso: Aún no sincronizado en Supabase; ejecuta el Script SQL para activar la nube).'
         });
+        setTimeout(() => {
+          setNewUserName('');
+          setNewUserEmail('');
+          setNewUserSpecialty('');
+          setUserModalStatus({ loading: false });
+          setShowAddUserModal(false);
+        }, 3000);
       }
     } catch (err: any) {
       setUserModalStatus({
@@ -454,24 +536,43 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
       {/* MODULE 3: GESTIÓN DE USUARIOS Y PERMISOS */}
       {activeTab === 'usuarios' && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <div>
               <h2 className="text-sm font-black uppercase tracking-[0.2em] text-[#002855]">
                 Gestión de Personal y Permisos (15-20 Empleados)
               </h2>
               <p className="text-xs text-slate-600 font-medium mt-0.5">
-                Control de altas/bajas de asesores, mecánicos, personal de almacén y niveles de acceso.
+                Control de altas/bajas de asesores, mecánicos, personal de almacén y niveles de acceso con Supabase.
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setShowConfigModal(true)}
+                className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-2 text-xs font-bold uppercase rounded-md transition-colors cursor-pointer border border-slate-300"
+                title="Configurar URL y Llave de tu Proyecto Supabase"
+              >
+                <Settings className="w-3.5 h-3.5 text-slate-600" />
+                <span>Configurar Supabase</span>
+              </button>
+
               <button
                 onClick={() => setShowSqlModal(true)}
                 className="flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 px-3 py-2 text-xs font-bold uppercase rounded-md transition-colors cursor-pointer border border-blue-200"
                 title="Ver y Copiar Script SQL para Supabase"
               >
                 <Database className="w-3.5 h-3.5 text-blue-700" />
-                <span>Script SQL Supabase</span>
+                <span>Script SQL</span>
+              </button>
+
+              <button
+                onClick={handleSyncAllUsers}
+                disabled={syncStatus.syncing}
+                className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 px-3 py-2 text-xs font-bold uppercase rounded-md transition-colors cursor-pointer border border-emerald-300"
+                title="Enviar todos los empleados a Supabase"
+              >
+                <UploadCloud className={`w-3.5 h-3.5 ${syncStatus.syncing ? 'animate-bounce text-emerald-600' : 'text-emerald-700'}`} />
+                <span>{syncStatus.syncing ? 'Sincronizando...' : 'Sincronizar a Supabase'}</span>
               </button>
 
               <button
@@ -481,7 +582,7 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
                 title="Comprobar si Supabase responde"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${dbTestStatus.testing ? 'animate-spin text-blue-600' : ''}`} />
-                <span>{dbTestStatus.testing ? 'Probando...' : 'Probar Supabase'}</span>
+                <span>{dbTestStatus.testing ? 'Probando...' : 'Probar Conexión'}</span>
               </button>
 
               <button
@@ -496,6 +597,29 @@ export const DireccionView: React.FC<DireccionViewProps> = ({ activeTab }) => {
               </button>
             </div>
           </div>
+
+          {syncStatus.result && (
+            <div className={`p-3 rounded-lg border text-xs flex items-center justify-between gap-3 ${
+              syncStatus.isOk 
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
+                : 'bg-amber-50 border-amber-300 text-amber-900'
+            }`}>
+              <div className="flex items-center gap-2">
+                {syncStatus.isOk ? (
+                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                )}
+                <span className="font-medium">{syncStatus.result}</span>
+              </div>
+              <button
+                onClick={() => setSyncStatus({ syncing: false })}
+                className="text-[10px] text-slate-400 hover:text-slate-700 font-bold uppercase cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {dbTestStatus.result && (
             <div className={`p-3 rounded-lg border text-xs flex items-center justify-between gap-3 ${
@@ -881,12 +1005,12 @@ CREATE POLICY "Allow public read/write on app_users" ON public.app_users FOR ALL
 
                 <div className="pt-3 border-t border-slate-200 flex justify-between items-center gap-2">
                   <a
-                    href="https://supabase.com/dashboard/project/oejrrmtnluefhttqnutn/sql/new"
+                    href={`https://supabase.com/dashboard/project/${currentProjectId}/sql/new`}
                     target="_blank"
                     rel="noreferrer"
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow-sm transition-colors"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow-sm transition-colors flex items-center gap-1.5"
                   >
-                    Abrir SQL Editor en Supabase ↗
+                    <span>Abrir SQL Editor en Supabase ↗</span>
                   </a>
 
                   <button
@@ -897,6 +1021,109 @@ CREATE POLICY "Allow public read/write on app_users" ON public.app_users FOR ALL
                     Cerrar
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Supabase Connection Configuration Modal */}
+          {showConfigModal && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white border border-slate-200 p-6 rounded-xl max-w-lg w-full space-y-4 shadow-2xl text-slate-900">
+                <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-5 h-5 text-slate-700" />
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-wider text-[#002855]">
+                        Configurar Conexión Supabase
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Ingresa la URL y Llave Anon de tu proyecto
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowConfigModal(false)} className="text-slate-400 hover:text-slate-700">✕</button>
+                </div>
+
+                {configSaveMsg && (
+                  <div className={`p-3 rounded-lg border text-xs flex items-center gap-2 ${
+                    configSaveMsg.isOk 
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
+                      : 'bg-amber-50 border-amber-300 text-amber-900'
+                  }`}>
+                    {configSaveMsg.isOk ? (
+                      <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    )}
+                    <span className="font-medium">{configSaveMsg.text}</span>
+                  </div>
+                )}
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900 space-y-1">
+                  <span className="font-bold flex items-center gap-1 text-blue-950">
+                    <Globe className="w-3.5 h-3.5" /> ¿Dónde encuentro estos datos en Supabase?
+                  </span>
+                  <p className="text-[11px] text-blue-800">
+                    Entra a tu panel de Supabase &rarr; <strong>Project Settings (⚙️)</strong> &rarr; <strong>API</strong> &rarr; Copia el <strong>Project URL</strong> y el <strong>anon public key</strong>.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSaveCredentials} className="space-y-3">
+                  <div>
+                    <label className="text-[10px] text-slate-700 font-bold uppercase block mb-1">
+                      Project URL (URL de Supabase)
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={configUrl}
+                      onChange={(e) => setConfigUrl(e.target.value)}
+                      placeholder="https://tu-proyecto.supabase.co"
+                      className="w-full bg-white border border-slate-300 px-3 py-2 text-xs font-mono text-slate-900 rounded-md focus:border-blue-600 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-slate-700 font-bold uppercase block mb-1">
+                      Anon Public API Key (Llave Pública)
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={configKey}
+                      onChange={(e) => setConfigKey(e.target.value)}
+                      placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      className="w-full bg-white border border-slate-300 px-3 py-2 text-xs font-mono text-slate-900 rounded-md focus:border-blue-600 outline-none"
+                    />
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={handleResetCredentials}
+                      className="text-[10px] font-bold uppercase text-slate-500 hover:text-slate-800 underline"
+                    >
+                      Restablecer por Defecto
+                    </button>
+
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowConfigModal(false)}
+                        className="border border-slate-300 px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:text-slate-900 rounded-lg"
+                      >
+                        Cerrar
+                      </button>
+                      <button
+                        type="submit"
+                        className="bg-[#002855] hover:bg-blue-900 text-white px-4 py-2 text-xs font-bold uppercase rounded-lg shadow-sm flex items-center gap-1.5"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>Guardar y Probar</span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
               </div>
             </div>
           )}
